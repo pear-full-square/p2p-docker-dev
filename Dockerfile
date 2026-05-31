@@ -1,7 +1,19 @@
-# Phase 0.1 — minimal Bare node image.
-# node:* base is only here for npm (to install the Bare runtime); the app runs on Bare, not Node.
-FROM node:22-slim
+# Phase 0.1.1 — slim image: the Bare runtime on a minimal glibc base, no Node.
+#
+# The `node` stage exists only to fetch the Bare runtime via npm; nothing from
+# Node ships in the final image. The Bare linux-x64 binary is glibc-dynamic
+# (needs libc/libm/libstdc++/libgcc), so the runtime base is distroless **cc**
+# (glibc + libstdc++), not scratch/busybox/alpine. The binary itself is ~94MB
+# (it embeds a JS engine) — that's the size floor for the prebuilt runtime.
+
+FROM node:22-slim AS bare-runtime
 RUN npm install -g bare
+
+FROM gcr.io/distroless/cc-debian12
+COPY --from=bare-runtime --chmod=0755 \
+  /usr/local/lib/node_modules/bare/node_modules/bare-runtime-linux-x64/bin/bare \
+  /usr/local/bin/bare
 WORKDIR /app
 COPY hello.js .
-CMD ["bare", "hello.js"]
+ENTRYPOINT ["/usr/local/bin/bare"]
+CMD ["hello.js"]

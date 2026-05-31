@@ -25,3 +25,10 @@ docker run --rm p2p-docker-dev:0.1
 ```
 
 Expect a JSON event line, e.g. `{"node":"node-0","event":"hello","phase":"0.1"}`.
+
+**Image (0.1.1):** multi-stage — Node only *fetches* the Bare runtime, which is
+then copied onto a minimal **distroless-cc** (glibc + libstdc++) base; **no Node
+in the final image** (~118MB). The Bare linux-x64 binary is glibc-dynamic
+(`libc`/`libm`/`libstdc++`/`libgcc`), so the base can't be scratch/busybox/alpine.
+The ~94MB floor is the Bare binary itself (it embeds a JS engine) — only a
+from-source QuickJS/static build would shrink that further.
