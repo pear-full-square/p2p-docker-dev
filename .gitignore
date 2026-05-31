@@ -1,0 +1,3 @@
+# Live capture output. A representative session per phase is committed under
+# journey/ as the record; ad-hoc runs stay local.
+logs/

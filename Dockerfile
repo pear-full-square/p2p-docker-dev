@@ -1,4 +1,4 @@
-# Phase 0.1.1 — slim image: the Bare runtime on a minimal glibc base, no Node.
+# The Bare runtime on a minimal glibc base, no Node.
 #
 # The `node` stage exists only to fetch the Bare runtime via npm; nothing from
 # Node ships in the final image. The Bare linux-x64 binary is glibc-dynamic
@@ -14,6 +14,6 @@ COPY --from=bare-runtime --chmod=0755 \
   /usr/local/lib/node_modules/bare/node_modules/bare-runtime-linux-x64/bin/bare \
   /usr/local/bin/bare
 WORKDIR /app
-COPY hello.js .
+COPY node.js .
 ENTRYPOINT ["/usr/local/bin/bare"]
-CMD ["hello.js"]
+CMD ["node.js"]

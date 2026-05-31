@@ -1,0 +1,29 @@
+# Phase 0.2 — a few long-running nodes, watched as one stream via ./capture.sh.
+#
+# init: true puts tini at PID 1 so SIGTERM (compose down / docker stop) reaches
+# Bare and the node exits cleanly and fast. Without it, Bare-as-PID-1 ignores
+# SIGTERM (the kernel applies no default disposition to PID 1) and the container
+# is SIGKILLed only after the 10s grace.
+#
+# container_name is pinned so the daemon's lifecycle events and the node's own
+# stdout agree on the node name in the merged log.
+
+x-node: &node
+  build: .
+  image: p2p-docker-dev:0.2
+  init: true
+  restart: "no"
+
+services:
+  node-a:
+    <<: *node
+    container_name: node-a
+    command: ["node.js", "node-a", "2000"]
+  node-b:
+    <<: *node
+    container_name: node-b
+    command: ["node.js", "node-b", "3000"]
+  node-c:
+    <<: *node
+    container_name: node-c
+    command: ["node.js", "node-c", "5000"]

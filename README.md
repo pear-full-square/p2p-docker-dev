@@ -15,18 +15,29 @@ It's built in the open, one phase at a time. Each phase is a goal; iterations
 - **Phase 3** — roles & routing (name → topic)
 - **Phase 4** — managed code distribution & responsibilities
 
-## Running it now (Phase 0.1.1)
+## Running it now (Phase 0.2)
 
-A Bare container that emits one structured event line on stdout, then exits:
+A few long-running Bare nodes, captured as **one structured event stream**:
 
 ```
-docker build -t p2p-docker-dev:0.1 .
-docker run --rm p2p-docker-dev:0.1
-# → {"node":"node-0","event":"hello","phase":"0.1"}
+./capture.sh        # Ctrl-C to stop, remove the containers, and finish the log
+```
+
+You get a `logs/session-*.jsonl` covering the whole life of the cluster — daemon
+`create`/`start`, each node's `start`/`heartbeat`, then `die`/`destroy` on
+teardown — merged chronologically. Every line is
+`{"ts","source":"app"|"daemon","node","event",…}`; see
+[`journey/phase-0.2-session.jsonl`](journey/phase-0.2-session.jsonl) for a sample.
+
+Just watch them live, no capture:
+
+```
+docker compose up        # node-a / node-b / node-c heartbeating
 ```
 
 The image is a slim multi-stage build — the Bare runtime on a minimal
-distroless-cc base, no Node (~118MB). See the journey log for the why.
+distroless-cc base, no Node (~118MB). No P2P yet: this is the monitoring
+substrate the swarm will be watched through. See the journey log for the why.
 
 ## The journey
 
