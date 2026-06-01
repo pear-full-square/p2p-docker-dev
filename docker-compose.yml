@@ -1,11 +1,12 @@
-# Phase 1 — a private DHT bootstrap + a few nodes that join a topic and connect.
+# Phase 2 — a private DHT bootstrap + an RPC server node + an RPC client node.
 #
-# The bootstrap gets a fixed IP: udx (the DHT transport) targets an IP, not a
-# Docker hostname, so nodes are pointed at 172.28.0.10:49737 directly. Flat
-# bridge ⇒ no NAT between nodes (real hole-punch/traversal is Chapter 8).
+# Cluster config (subnet, bootstrap address/port, topic) is parameterised via
+# environment variables — copy .env.example to .env and adjust. No environment
+# specifics are hardcoded here. (capture.sh auto-creates .env from .env.example.)
 #
-# init: true puts tini at PID 1 so SIGTERM (compose down / docker stop) reaches
-# Bare; each process catches it via bare-signals and exits cleanly (emits stop).
+# The bootstrap gets a fixed IP because udx (the DHT transport) targets an IP,
+# not a Docker hostname. Flat bridge ⇒ no NAT between nodes (real traversal is
+# Chapter 8). init: true ⇒ tini at PID 1 so SIGTERM reaches Bare for a clean stop.
 
 x-node: &node
   build: .
@@ -18,25 +19,25 @@ services:
   bootstrap:
     <<: *node
     container_name: bootstrap
-    command: ["bootstrap.js", "49737", "172.28.0.10"]
+    command: ["bootstrap.js", "${BOOTSTRAP_PORT}", "${BOOTSTRAP_IP}"]
     networks:
       cluster:
-        ipv4_address: 172.28.0.10
+        ipv4_address: ${BOOTSTRAP_IP}
 
   node-a:
     <<: *node
     container_name: node-a
-    command: ["node.js", "node-a", "172.28.0.10:49737", "spl6-phase2", "server"]
+    command: ["node.js", "node-a", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "${TOPIC}", "server"]
     depends_on: [bootstrap]
 
   node-b:
     <<: *node
     container_name: node-b
-    command: ["node.js", "node-b", "172.28.0.10:49737", "spl6-phase2", "client"]
+    command: ["node.js", "node-b", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "${TOPIC}", "client"]
     depends_on: [bootstrap]
 
 networks:
   cluster:
     ipam:
       config:
-        - subnet: 172.28.0.0/16
+        - subnet: ${CLUSTER_SUBNET}

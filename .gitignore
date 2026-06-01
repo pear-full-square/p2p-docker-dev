@@ -1,3 +1,7 @@
 # Live capture output. A representative session per phase is committed under
 # journey/ as the record; ad-hoc runs stay local.
 logs/
+
+# Local cluster config (addresses/ports/topic). Template is .env.example;
+# never commit a concrete environment's config.
+.env

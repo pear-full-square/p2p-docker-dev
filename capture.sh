@@ -15,6 +15,8 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
+[ -f .env ] || cp .env.example .env   # cluster config (addresses/ports/topic)
+
 PROJECT="p2p-docker-dev"
 mkdir -p logs
 LOG="logs/session-$(date +%Y%m%d-%H%M%S).jsonl"

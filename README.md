@@ -33,6 +33,10 @@ first cross-peer trace. See
 [`journey/phase-2-session.jsonl`](journey/phase-2-session.jsonl) for a sample and
 [the Phase 2 writeup](journey/phase-2-rpc.md).
 
+Cluster config — subnet, bootstrap address/port, topic — is parameterised in
+`.env` (copy of `.env.example`; `capture.sh` creates it if missing). Nothing
+environment-specific is hardcoded in `docker-compose.yml`.
+
 Key detail: on the flat bridge there's no NAT between nodes, so nodes run the DHT
 with `firewalled: false` and connect **directly** (holepunch is for NAT traversal
 and would otherwise fail here — see
