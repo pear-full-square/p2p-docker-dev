@@ -13,13 +13,17 @@ journey; the latest is the current product.
 
 ## The product, right now
 
-The latest phase — **[phase-3-roles-routing](phase-3-roles-routing/)** — is a
-private DHT cluster where nodes **serve named services** and clients **route to
-them by name** (name → topic → peer), multi-peer, with a no-peer fallback — each
-call traced end-to-end by a correlation id. Run it:
+The cluster now demonstrates **both messaging primitives** on the private DHT,
+each in its own phase:
+- **[phase-3-roles-routing](phase-3-roles-routing/)** — request/response (RPC):
+  nodes serve named services, clients route to them by name (1:1).
+- **[phase-4-pubsub-mesh](phase-4-pubsub-mesh/)** — publish/subscribe (mesh): one
+  member emits, the others receive, no hub (1:many).
+
+Run either from its folder:
 
 ```
-cd phase-3-roles-routing && ./capture.sh     # Ctrl-C to stop; writes a session log
+cd phase-4-pubsub-mesh && ./capture.sh     # Ctrl-C to stop; writes a session log
 ```
 
 ## The journey
@@ -29,7 +33,8 @@ cd phase-3-roles-routing && ./capture.sh     # Ctrl-C to stop; writes a session 
 | **[phase-0-node-and-monitoring](phase-0-node-and-monitoring/)** | A containerised Bare node + the one-structured-event-stream monitoring substrate (no P2P). |
 | **[phase-1-peers-connect](phase-1-peers-connect/)** | Peers discover + connect on a private DHT. Includes the connection investigation: the flat-bridge `firewalled:false` direct-connect finding, with its committed probes. |
 | **[phase-2-rpc](phase-2-rpc/)** | avsc-rpc over the swarm — the AVRO RPC layer (the one spl rides) on a P2P duplex; first cross-peer correlation id. |
-| **[phase-3-roles-routing](phase-3-roles-routing/)** | Nodes serve named services; clients route by name → topic → peer (multi-peer, no-peer fallback). Folds in the thin leveled observability emitter. |
+| **[phase-3-roles-routing](phase-3-roles-routing/)** | **RPC (1:1).** Nodes serve named services; clients route by name → topic → peer (multi-peer, no-peer fallback). Folds in the thin leveled observability emitter. |
+| **[phase-4-pubsub-mesh](phase-4-pubsub-mesh/)** | **Pub/sub (1:many).** Every member meshes (server+client); one emits, the others receive — no hub. The contrast to phase-3. |
 
 Each phase folder holds a `README.md` (the journey for that step), the runnable
 code + `capture.sh`, a representative scrubbed `session.jsonl`, and any `probes/`

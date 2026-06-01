@@ -1,0 +1,44 @@
+{"ts":"2026-06-01T15:29:42.331Z","source":"daemon","node":"bootstrap","event":"create","exit":""}
+{"ts":"2026-06-01T15:29:42.433Z","source":"daemon","node":"member-b","event":"create","exit":""}
+{"ts":"2026-06-01T15:29:42.437Z","source":"daemon","node":"member-a","event":"create","exit":""}
+{"ts":"2026-06-01T15:29:42.437Z","source":"daemon","node":"member-c","event":"create","exit":""}
+{"ts":"2026-06-01T15:29:42.672Z","source":"daemon","node":"bootstrap","event":"start","exit":""}
+{"ts":"2026-06-01T15:29:42.874Z","source":"daemon","node":"member-c","event":"start","exit":""}
+{"ts":"2026-06-01T15:29:42.932Z","source":"daemon","node":"member-b","event":"start","exit":""}
+{"ts":"2026-06-01T15:29:43.003Z","source":"daemon","node":"member-a","event":"start","exit":""}
+{"ts":"2026-06-01T15:29:43.145Z","source":"app","level":30,"time":1780327783040,"node":"member-b","phase":"4.0","event":"joined","topic":"************c9a1","msg":"mesh on 'events'"}
+{"ts":"2026-06-01T15:29:43.147Z","source":"app","level":30,"time":1780327783058,"node":"member-b","phase":"4.0","event":"peer-up","remote":"************48a6","peers":1}
+{"ts":"2026-06-01T15:29:43.148Z","source":"app","level":30,"time":1780327783124,"node":"member-b","phase":"4.0","event":"peer-up","remote":"************3fd8","peers":2}
+{"ts":"2026-06-01T15:29:43.150Z","source":"app","level":30,"time":1780327782878,"node":"bootstrap","phase":"4.0","event":"start","port":49737,"host":"172.x.x.x"}
+{"ts":"2026-06-01T15:29:43.151Z","source":"app","level":30,"time":1780327782881,"node":"bootstrap","phase":"4.0","event":"bootstrap-ready","port":49737,"host":"172.x.x.x"}
+{"ts":"2026-06-01T15:29:43.152Z","source":"app","level":30,"time":1780327782971,"node":"member-c","phase":"4.0","event":"joined","topic":"************c9a1","msg":"mesh on 'events'"}
+{"ts":"2026-06-01T15:29:43.153Z","source":"app","level":30,"time":1780327783055,"node":"member-c","phase":"4.0","event":"peer-up","remote":"************c114","peers":1}
+{"ts":"2026-06-01T15:29:43.154Z","source":"app","level":30,"time":1780327783123,"node":"member-c","phase":"4.0","event":"peer-up","remote":"************3fd8","peers":2}
+{"ts":"2026-06-01T15:29:43.155Z","source":"app","level":30,"time":1780327783112,"node":"member-a","phase":"4.0","event":"joined","topic":"************c9a1","msg":"mesh on 'events'"}
+{"ts":"2026-06-01T15:29:43.156Z","source":"app","level":30,"time":1780327783126,"node":"member-a","phase":"4.0","event":"peer-up","remote":"************48a6","peers":1}
+{"ts":"2026-06-01T15:29:43.157Z","source":"app","level":30,"time":1780327783127,"node":"member-a","phase":"4.0","event":"peer-up","remote":"************c114","peers":2}
+{"ts":"2026-06-01T15:29:45.974Z","source":"app","level":30,"time":1780327785972,"node":"member-c","phase":"4.0","event":"published","cid":"member-c-0","to":2,"msg":"published to 2 peer(s)"}
+{"ts":"2026-06-01T15:29:45.976Z","source":"app","level":30,"time":1780327785973,"node":"member-a","phase":"4.0","event":"received","from":"member-c","cid":"member-c-0","text":"hello #0","msg":"received from member-c"}
+{"ts":"2026-06-01T15:29:45.977Z","source":"app","level":30,"time":1780327785973,"node":"member-b","phase":"4.0","event":"received","from":"member-c","cid":"member-c-0","text":"hello #0","msg":"received from member-c"}
+{"ts":"2026-06-01T15:29:46.044Z","source":"app","level":30,"time":1780327786042,"node":"member-c","phase":"4.0","event":"received","from":"member-b","cid":"member-b-0","text":"hello #0","msg":"received from member-b"}
+{"ts":"2026-06-01T15:29:46.045Z","source":"app","level":30,"time":1780327786042,"node":"member-a","phase":"4.0","event":"received","from":"member-b","cid":"member-b-0","text":"hello #0","msg":"received from member-b"}
+{"ts":"2026-06-01T15:29:46.047Z","source":"app","level":30,"time":1780327786041,"node":"member-b","phase":"4.0","event":"published","cid":"member-b-0","to":2,"msg":"published to 2 peer(s)"}
+{"ts":"2026-06-01T15:29:46.116Z","source":"app","level":30,"time":1780327786114,"node":"member-a","phase":"4.0","event":"published","cid":"member-a-0","to":2,"msg":"published to 2 peer(s)"}
+{"ts":"2026-06-01T15:29:46.118Z","source":"app","level":30,"time":1780327786114,"node":"member-c","phase":"4.0","event":"received","from":"member-a","cid":"member-a-0","text":"hello #0","msg":"received from member-a"}
+{"ts":"2026-06-01T15:29:46.119Z","source":"app","level":30,"time":1780327786115,"node":"member-b","phase":"4.0","event":"received","from":"member-a","cid":"member-a-0","text":"hello #0","msg":"received from member-a"}
+{"ts":"2026-06-01T15:29:46.478Z","source":"daemon","node":"member-b","event":"kill","exit":""}
+{"ts":"2026-06-01T15:29:46.483Z","source":"daemon","node":"member-a","event":"kill","exit":""}
+{"ts":"2026-06-01T15:29:46.483Z","source":"daemon","node":"member-c","event":"kill","exit":""}
+{"ts":"2026-06-01T15:29:47.037Z","source":"daemon","node":"member-c","event":"stop","exit":""}
+{"ts":"2026-06-01T15:29:47.049Z","source":"daemon","node":"member-c","event":"die","exit":"0"}
+{"ts":"2026-06-01T15:29:47.064Z","source":"daemon","node":"member-c","event":"destroy","exit":""}
+{"ts":"2026-06-01T15:29:47.159Z","source":"daemon","node":"member-b","event":"stop","exit":""}
+{"ts":"2026-06-01T15:29:47.170Z","source":"daemon","node":"member-b","event":"die","exit":"0"}
+{"ts":"2026-06-01T15:29:47.184Z","source":"daemon","node":"member-b","event":"destroy","exit":""}
+{"ts":"2026-06-01T15:29:47.362Z","source":"daemon","node":"member-a","event":"stop","exit":""}
+{"ts":"2026-06-01T15:29:47.373Z","source":"daemon","node":"member-a","event":"die","exit":"0"}
+{"ts":"2026-06-01T15:29:47.386Z","source":"daemon","node":"member-a","event":"destroy","exit":""}
+{"ts":"2026-06-01T15:29:47.407Z","source":"daemon","node":"bootstrap","event":"kill","exit":""}
+{"ts":"2026-06-01T15:29:47.861Z","source":"daemon","node":"bootstrap","event":"stop","exit":""}
+{"ts":"2026-06-01T15:29:47.877Z","source":"daemon","node":"bootstrap","event":"die","exit":"0"}
+{"ts":"2026-06-01T15:29:47.891Z","source":"daemon","node":"bootstrap","event":"destroy","exit":""}

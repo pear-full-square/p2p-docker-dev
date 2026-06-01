@@ -1,0 +1,11 @@
+{
+  "name": "p2p-docker-dev-pubsub",
+  "private": true,
+  "comment": "Pub/sub mesh needs no RPC layer — just Hyperswarm connections + line-delimited JSON. Lighter stack than the RPC phases (no avsc).",
+  "dependencies": {
+    "hyperswarm": "^4.17.0",
+    "hyperdht": "^6.32.0",
+    "sodium-native": "^5.1.0",
+    "bare-signals": "^4.2.0"
+  }
+}

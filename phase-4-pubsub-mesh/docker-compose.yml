@@ -1,0 +1,46 @@
+# Phase 4 — publish/subscribe over a mesh. A private DHT bootstrap + three
+# symmetric MEMBERS on one topic. Each joins {server:true, client:true}, so the
+# swarm meshes them all; each publishes on an interval and receives the others' —
+# one emits, the rest receive, no hub. Contrast with phase-3 (1:1 RPC).
+#
+# Network config is parameterised via .env (see .env.example; capture.sh creates it).
+
+x-node: &node
+  build: .
+  image: p2p-docker-dev:4.0
+  init: true
+  restart: "no"
+  networks: [cluster]
+
+services:
+  bootstrap:
+    <<: *node
+    container_name: bootstrap
+    command: ["bootstrap.js", "${BOOTSTRAP_PORT}", "${BOOTSTRAP_IP}"]
+    networks:
+      cluster:
+        ipv4_address: ${BOOTSTRAP_IP}
+
+  member-a:
+    <<: *node
+    container_name: member-a
+    command: ["node.js", "member-a", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "${TOPIC}"]
+    depends_on: [bootstrap]
+
+  member-b:
+    <<: *node
+    container_name: member-b
+    command: ["node.js", "member-b", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "${TOPIC}"]
+    depends_on: [bootstrap]
+
+  member-c:
+    <<: *node
+    container_name: member-c
+    command: ["node.js", "member-c", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "${TOPIC}"]
+    depends_on: [bootstrap]
+
+networks:
+  cluster:
+    ipam:
+      config:
+        - subnet: ${CLUSTER_SUBNET}
