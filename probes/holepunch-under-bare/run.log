@@ -1,0 +1,22 @@
+# holepunch-under-bare — run 2026-06-01T04:00:21Z
+
+## build
+#17 exporting layers 0.3s done
+#17 writing image sha256:a8260bac29e0a53b5e44d2166d00a3fb403b2951a7eca1cbf717ab7e85e98213 0.0s done
+#17 naming to docker.io/library/holepunch-under-bare-probe 0.0s done
+#17 DONE 0.4s
+
+## load + versions (probe.js)
+{"probe":"sodium-native","version":"5.1.0","status":"ok","pkBytes":32}
+{"probe":"udx-native","version":"1.19.2","status":"ok","hasSocket":true}
+{"probe":"hyperdht","version":"6.32.0","status":"ok","hasBootstrapper":true}
+{"probe":"hyperswarm","version":"4.17.0","status":"ok","keyBytes":32}
+{"probe":"bare-signals","version":"?","status":"ok","ctor":"function"}
+
+## api surface (api.js)
+{"mod":"bare-signals","type":"function","proto":["constructor","start","stop","ref","unref","close","_onsignal","_onclose"]}
+{"mod":"hyperdht","static":["keyPair","hash","connectRawStream"]}
+{"mod":"hyperswarm","proto":["constructor","_maybeRelayConnection","_enqueue","_requeue","_flushMaybe","_withinMaxPeers","_flushAllMaybe","_shouldConnectExplicit","_shouldConnect","_shouldRequeue","_connect","_connectDone","_attemptClientConnections","_handleFirewall","_handleServerConnectionSwap","_handleServerConnection","_upsertPeer","_handleUpdate","_maybeDeletePeer","_handlePeer","_handleNetworkUpdate","_handleNetworkChange","_banPeer","status","listen","join","leave","joinPeer","leavePeer","flush"]}
+
+## image size
+148MB

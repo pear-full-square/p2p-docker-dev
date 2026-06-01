@@ -1,0 +1,11 @@
+{
+  "name": "holepunch-under-bare-probe",
+  "private": true,
+  "dependencies": {
+    "hyperswarm": "*",
+    "hyperdht": "*",
+    "sodium-native": "*",
+    "udx-native": "*",
+    "bare-signals": "*"
+  }
+}
