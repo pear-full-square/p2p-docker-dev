@@ -2,25 +2,27 @@
 # into the app image (which already carries udx-native). If udx-client logs a
 # 'pong', the bridge passes UDP between containers and the Phase 1 connection
 # failure is HyperDHT holepunch coordination — not Docker networking.
+#
+# Config is parameterised via .env (see .env.example); run.sh auto-creates it.
 services:
   udx-server:
-    image: p2p-docker-dev:1.1
+    image: ${APP_IMAGE}
     init: true
     container_name: udx-server
     volumes:
       - ./udx-echo.js:/app/udx-echo.js:ro
-    command: ["udx-echo.js", "server", "9000"]
+    command: ["udx-echo.js", "server", "${UDX_PORT}"]
     networks:
       udxnet:
-        ipv4_address: 172.29.0.10
+        ipv4_address: ${UDX_SERVER_IP}
 
   udx-client:
-    image: p2p-docker-dev:1.1
+    image: ${APP_IMAGE}
     init: true
     container_name: udx-client
     volumes:
       - ./udx-echo.js:/app/udx-echo.js:ro
-    command: ["udx-echo.js", "client", "172.29.0.10:9000"]
+    command: ["udx-echo.js", "client", "${UDX_SERVER_IP}:${UDX_PORT}"]
     depends_on: [udx-server]
     networks: [udxnet]
 
@@ -28,4 +30,4 @@ networks:
   udxnet:
     ipam:
       config:
-        - subnet: 172.29.0.0/16
+        - subnet: ${UDX_SUBNET}

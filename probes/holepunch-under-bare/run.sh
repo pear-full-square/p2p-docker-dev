@@ -18,4 +18,4 @@ IMG="holepunch-under-bare-probe"
   echo
   echo "## image size"
   docker images "$IMG" --format '{{.Size}}'
-} 2>&1 | tee run.log
+} 2>&1 | ../../scrub.sh | tee run.log

@@ -11,10 +11,11 @@ already carries `udx-native`.
 ## Run
 
 ```
-docker compose -p p2p-udx up -d
-docker compose -p p2p-udx logs -f --no-log-prefix
-docker compose -p p2p-udx down
+./run.sh        # builds the app image if needed, runs ~8s, writes a scrubbed run.log
 ```
+
+Config (subnet / server IP / port / app image) is in `.env` — `run.sh` creates it
+from `.env.example` if missing.
 
 ## Result (`run.log`)
 

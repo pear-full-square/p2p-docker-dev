@@ -12,4 +12,4 @@ IMG="observability-under-bare-probe"
   echo
   echo "## probe.js"
   docker run --rm "$IMG" probe.js
-} 2>&1 | tee run.log
+} 2>&1 | ../../scrub.sh | tee run.log

@@ -1,13 +1,13 @@
 # observability-under-bare — run 2026-06-01T05:27:43Z
 
 ## build
-#17 writing image sha256:4ced2749b900085ae585650ef7035245fc7795f1a9db7457ece9daa896bc3570
-#17 writing image sha256:4ced2749b900085ae585650ef7035245fc7795f1a9db7457ece9daa896bc3570 done
+#17 writing image sha256:************************************************************3570
+#17 writing image sha256:************************************************************3570 done
 #17 naming to docker.io/library/observability-under-bare-probe 0.0s done
 #17 DONE 0.7s
 
 ## probe.js
-{"level":30,"time":1780291685283,"pid":1,"hostname":"938812f97a9f","hello":"world","msg":"pino-bare info line"}
+{"level":30,"time":1780291685283,"pid":1,"hostname":"********7a9f","hello":"world","msg":"pino-bare info line"}
 {"probe":"pino-bare","version":"?","status":"ok"}
 {"traceFnKeys":["id","object","parentObject","caller"]}
 {"probe":"hypertrace","version":"1.4.2","status":"ok","tracedCalls":2}
@@ -15,4 +15,4 @@
 {"holepunchModule":"hyperdht","version":"6.32.0","dependsOnHypertrace":false}
 {"holepunchModule":"hypercore","version":"11.33.1","dependsOnHypertrace":false}
 {"holepunchModule":"dht-rpc","version":"6.27.0","dependsOnHypertrace":false}
-{"level":40,"time":1780291685285,"pid":1,"hostname":"938812f97a9f","conn":"abc123","peer":"node-b","msg":"child logger line"}
+{"level":40,"time":1780291685285,"pid":1,"hostname":"********7a9f","conn":"abc123","peer":"node-b","msg":"child logger line"}
