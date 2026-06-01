@@ -1,0 +1,14 @@
+{
+  "name": "avsc-rpc-under-bare-probe",
+  "private": true,
+  "comment": "avsc + avsc-rpc are git-cloned in the Dockerfile (npm's git-dep handling is fragile); these are their declared runtime deps, installed from the registry as siblings.",
+  "dependencies": {
+    "streamx": "^2.26.0",
+    "bare-buffer": "^3.6.0",
+    "bare-events": "^2.8.2",
+    "bare-stream": "^2.13.0",
+    "bare-crypto": "^1.13.4",
+    "bare-fs": "^4.7.0",
+    "bare-path": "^3.0.0"
+  }
+}
