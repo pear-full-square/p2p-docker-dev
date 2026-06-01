@@ -9,7 +9,7 @@
 
 x-node: &node
   build: .
-  image: p2p-docker-dev:1.1
+  image: p2p-docker-dev:2.0
   init: true
   restart: "no"
   networks: [cluster]
@@ -26,13 +26,13 @@ services:
   node-a:
     <<: *node
     container_name: node-a
-    command: ["node.js", "node-a", "172.28.0.10:49737", "spl6-phase1", "both"]
+    command: ["node.js", "node-a", "172.28.0.10:49737", "spl6-phase2", "server"]
     depends_on: [bootstrap]
 
   node-b:
     <<: *node
     container_name: node-b
-    command: ["node.js", "node-b", "172.28.0.10:49737", "spl6-phase1", "both"]
+    command: ["node.js", "node-b", "172.28.0.10:49737", "spl6-phase2", "client"]
     depends_on: [bootstrap]
 
 networks:

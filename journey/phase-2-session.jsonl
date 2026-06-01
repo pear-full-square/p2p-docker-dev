@@ -1,0 +1,28 @@
+{"ts":"2026-06-01T06:49:51.506Z","source":"daemon","node":"bootstrap","event":"create","exit":""}
+{"ts":"2026-06-01T06:49:51.595Z","source":"daemon","node":"node-a","event":"create","exit":""}
+{"ts":"2026-06-01T06:49:51.599Z","source":"daemon","node":"node-b","event":"create","exit":""}
+{"ts":"2026-06-01T06:49:51.792Z","source":"daemon","node":"bootstrap","event":"start","exit":""}
+{"ts":"2026-06-01T06:49:52.008Z","source":"daemon","node":"node-a","event":"start","exit":""}
+{"ts":"2026-06-01T06:49:52.074Z","source":"daemon","node":"node-b","event":"start","exit":""}
+{"ts":"2026-06-01T06:49:52.213Z","source":"app","node":"bootstrap","event":"start","phase":"2.0","port":49737,"host":"172.28.0.10"}
+{"ts":"2026-06-01T06:49:52.214Z","source":"app","node":"bootstrap","event":"bootstrap-ready","phase":"2.0","port":49737,"host":"172.28.0.10"}
+{"ts":"2026-06-01T06:49:52.215Z","source":"app","node":"node-a","event":"start","phase":"2.0","topic":"3c5d1b93f6bd191f","role":"server"}
+{"ts":"2026-06-01T06:49:52.216Z","source":"app","node":"node-a","event":"peer-connected","phase":"2.0","remote":"5a83716b3304d4db"}
+{"ts":"2026-06-01T06:49:52.217Z","source":"app","node":"node-a","event":"rpc-channel","phase":"2.0","remote":"5a83716b3304d4db"}
+{"ts":"2026-06-01T06:49:52.218Z","source":"app","node":"node-a","event":"rpc-serve","phase":"2.0","cid":"node-b-0","message":"ping from node-b"}
+{"ts":"2026-06-01T06:49:52.219Z","source":"app","node":"node-b","event":"start","phase":"2.0","topic":"3c5d1b93f6bd191f","role":"client"}
+{"ts":"2026-06-01T06:49:52.220Z","source":"app","node":"node-b","event":"peer-connected","phase":"2.0","remote":"897ce40d1b993474"}
+{"ts":"2026-06-01T06:49:52.221Z","source":"app","node":"node-b","event":"rpc-call","phase":"2.0","remote":"897ce40d1b993474","cid":"node-b-0","message":"ping"}
+{"ts":"2026-06-01T06:49:52.222Z","source":"app","node":"node-b","event":"rpc-response","phase":"2.0","remote":"897ce40d1b993474","cid":"node-b-0","res":"echo:ping from node-b"}
+{"ts":"2026-06-01T06:50:06.403Z","source":"daemon","node":"node-a","event":"kill","exit":""}
+{"ts":"2026-06-01T06:50:06.405Z","source":"daemon","node":"node-b","event":"kill","exit":""}
+{"ts":"2026-06-01T06:50:06.853Z","source":"daemon","node":"node-a","event":"stop","exit":""}
+{"ts":"2026-06-01T06:50:06.865Z","source":"daemon","node":"node-a","event":"die","exit":"0"}
+{"ts":"2026-06-01T06:50:06.877Z","source":"daemon","node":"node-a","event":"destroy","exit":""}
+{"ts":"2026-06-01T06:50:07.019Z","source":"daemon","node":"node-b","event":"stop","exit":""}
+{"ts":"2026-06-01T06:50:07.031Z","source":"daemon","node":"node-b","event":"die","exit":"0"}
+{"ts":"2026-06-01T06:50:07.043Z","source":"daemon","node":"node-b","event":"destroy","exit":""}
+{"ts":"2026-06-01T06:50:07.062Z","source":"daemon","node":"bootstrap","event":"kill","exit":""}
+{"ts":"2026-06-01T06:50:07.466Z","source":"daemon","node":"bootstrap","event":"stop","exit":""}
+{"ts":"2026-06-01T06:50:07.478Z","source":"daemon","node":"bootstrap","event":"die","exit":"0"}
+{"ts":"2026-06-01T06:50:07.492Z","source":"daemon","node":"bootstrap","event":"destroy","exit":""}

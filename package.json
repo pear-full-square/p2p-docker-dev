@@ -1,10 +1,18 @@
 {
   "name": "p2p-docker-dev",
   "private": true,
+  "comment": "avsc + avsc-rpc (the AVRO RPC forks) are git-cloned in the Dockerfile; their registry deps are listed here so npm installs them as siblings (npm's git-dep handling for these forks is fragile — see probes/avsc-rpc-under-bare).",
   "dependencies": {
     "hyperswarm": "^4.17.0",
     "hyperdht": "^6.32.0",
     "sodium-native": "^5.1.0",
-    "bare-signals": "^4.2.0"
+    "bare-signals": "^4.2.0",
+    "streamx": "^2.26.0",
+    "bare-buffer": "^3.6.0",
+    "bare-events": "^2.8.2",
+    "bare-stream": "^2.13.0",
+    "bare-crypto": "^1.13.4",
+    "bare-fs": "^4.7.0",
+    "bare-path": "^3.0.0"
   }
 }

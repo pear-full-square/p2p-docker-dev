@@ -10,25 +10,28 @@ It's built in the open, one phase at a time. Each phase is a goal; iterations
 (0.1, 0.2, …) grow it until it's met, marked by git tags (e.g. `phase-0.1`):
 
 - **Phase 0** — runnable node + monitoring ✓
-- **Phase 1** — peers connect (private DHT) *(here)*
-- **Phase 2** — avsc-rpc over Hyperswarm
+- **Phase 1** — peers connect (private DHT) ✓
+- **Phase 2** — avsc-rpc over Hyperswarm *(here)*
 - **Phase 3** — roles & routing (name → topic)
 - **Phase 4** — managed code distribution & responsibilities
 
-## Running it now (Phase 1)
+## Running it now (Phase 2)
 
-A private DHT bootstrap + two nodes that join a topic, connect, and exchange a
-hello over the encrypted stream — captured as **one structured event stream**:
+A private DHT bootstrap + an RPC server node + an RPC client node. The client
+round-trips an **AVRO RPC** (`avsc-rpc`) over the encrypted P2P stream; captured
+as **one structured event stream**:
 
 ```
 ./capture.sh        # Ctrl-C to stop, remove the containers, and finish the log
 ```
 
 You get a `logs/session-*.jsonl` covering the whole life of the cluster — daemon
-`create`/`start`, `bootstrap-ready`, each node's `join` / `peer-connected` /
-`hello-received`, then `die`/`destroy` on teardown — merged chronologically.
-Every line is `{"ts","source":"app"|"daemon","node","event",…}`; see
-[`journey/phase-1-session.jsonl`](journey/phase-1-session.jsonl) for a sample.
+`create`/`start`, `bootstrap-ready`, `peer-connected`, the RPC exchange
+(`rpc-call` → `rpc-serve` → `rpc-response`), then `die`/`destroy`. Each RPC
+carries a **correlation id** (`cid`) that appears in both peers' streams — the
+first cross-peer trace. See
+[`journey/phase-2-session.jsonl`](journey/phase-2-session.jsonl) for a sample and
+[the Phase 2 writeup](journey/phase-2-rpc.md).
 
 Key detail: on the flat bridge there's no NAT between nodes, so nodes run the DHT
 with `firewalled: false` and connect **directly** (holepunch is for NAT traversal

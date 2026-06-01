@@ -15,7 +15,7 @@ const port = Number(Bare.argv[2]) || 49737
 const host = Bare.argv[3] || '127.0.0.1'
 
 function emit (event, extra = {}) {
-  console.log(JSON.stringify({ node: 'bootstrap', event, phase: '1.1', ...extra }))
+  console.log(JSON.stringify({ node: 'bootstrap', event, phase: '2.0', ...extra }))
 }
 
 const node = DHT.bootstrapper(port, host)

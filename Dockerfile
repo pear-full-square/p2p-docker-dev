@@ -1,16 +1,21 @@
 # The Bare runtime + the app's bundled deps on a minimal glibc base, no Node.
 #
-# Deps are installed via npm in the build stage and copied as node_modules —
-# absorbed at build time (see the roadmap invariant: the app owns all runtime
-# code, nothing is pulled at runtime). The `node` stage exists only to fetch the
-# Bare runtime and the deps; nothing from Node ships in the final image. The Bare
-# linux-x64 binary is glibc-dynamic, so the runtime base is distroless **cc**.
+# Deps are absorbed at build time (roadmap invariant). Registry deps come via
+# npm; the AVRO RPC forks (avsc, avsc-rpc) are cloned via anonymous https into
+# node_modules as siblings — npm's git-dep handling for these non-registry forks
+# is fragile (ssh normalization, cacache collisions; see probes/avsc-rpc-under-bare).
+# avsc-rpc's relative require('../avsc') resolves to the sibling node_modules/avsc.
+# Builder is full node:22 (has git); discarded in the multi-stage build, so the
+# final image stays Node-free.
 
-FROM node:22-slim AS build
+FROM node:22 AS build
 RUN npm install -g bare
 WORKDIR /app
 COPY package.json .
 RUN npm install
+RUN git clone --depth 1 https://github.com/bare-for-pear/avsc.git     node_modules/avsc \
+ && git clone --depth 1 https://github.com/bare-for-pear/avsc-rpc.git node_modules/avsc-rpc \
+ && rm -rf node_modules/avsc/.git node_modules/avsc-rpc/.git
 COPY node.js bootstrap.js .
 
 FROM gcr.io/distroless/cc-debian12
