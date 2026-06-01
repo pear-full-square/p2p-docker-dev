@@ -1,0 +1,31 @@
+# Ground-truth: container-to-container UDX (no DHT). The echo script is mounted
+# into the app image (which already carries udx-native). If udx-client logs a
+# 'pong', the bridge passes UDP between containers and the Phase 1 connection
+# failure is HyperDHT holepunch coordination — not Docker networking.
+services:
+  udx-server:
+    image: p2p-docker-dev:1.1
+    init: true
+    container_name: udx-server
+    volumes:
+      - ./udx-echo.js:/app/udx-echo.js:ro
+    command: ["udx-echo.js", "server", "9000"]
+    networks:
+      udxnet:
+        ipv4_address: 172.29.0.10
+
+  udx-client:
+    image: p2p-docker-dev:1.1
+    init: true
+    container_name: udx-client
+    volumes:
+      - ./udx-echo.js:/app/udx-echo.js:ro
+    command: ["udx-echo.js", "client", "172.29.0.10:9000"]
+    depends_on: [udx-server]
+    networks: [udxnet]
+
+networks:
+  udxnet:
+    ipam:
+      config:
+        - subnet: 172.29.0.0/16

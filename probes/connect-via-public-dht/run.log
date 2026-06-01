@@ -1,0 +1,19 @@
+# connect-via-public-dht — bridged + host-net runs
+
+## bridged (default compose), 60s — joins, never connects:
+{"node":"pub-node-a","event":"start","phase":"1.1","topic":"697e26b824af349b","bootstrap":"public-dht"}
+{"node":"pub-node-a","event":"swarm-ready","phase":"1.1","key":"a1f660a6b4b8153f","role":"both"}
+{"node":"pub-node-a","event":"joined","phase":"1.1","topic":"697e26b824af349b","role":"both"}
+{"node":"pub-node-b","event":"start","phase":"1.1","topic":"697e26b824af349b","bootstrap":"public-dht"}
+{"node":"pub-node-b","event":"swarm-ready","phase":"1.1","key":"4331099da7e268d8","role":"both"}
+{"node":"pub-node-b","event":"joined","phase":"1.1","topic":"697e26b824af349b","role":"both"}
+
+## host networking (docker-compose.host.yml), 70s — also never connects:
+{"node":"host-node-b","event":"start","phase":"1.1","topic":"013cfbac52008950","bootstrap":"public-dht"}
+{"node":"host-node-b","event":"swarm-ready","phase":"1.1","key":"71475133b171f0ce","role":"both"}
+{"node":"host-node-a","event":"start","phase":"1.1","topic":"013cfbac52008950","bootstrap":"public-dht"}
+{"node":"host-node-a","event":"swarm-ready","phase":"1.1","key":"19e2ef5b7761578b","role":"both"}
+{"node":"host-node-b","event":"joined","phase":"1.1","topic":"013cfbac52008950","role":"both"}
+{"node":"host-node-a","event":"joined","phase":"1.1","topic":"013cfbac52008950","role":"both"}
+
+Conclusion: same-host containers don't connect via the public DHT (shared outbound NAT; hairpin). Resolved by the udx-on-bridge + bare-metal probes -> the fix is firewalled:false direct connect on the flat bridge (see journey/phase-1-peers-connect.md).

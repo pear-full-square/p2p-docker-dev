@@ -1,0 +1,18 @@
+# Variant: the same two public-DHT nodes, but with HOST networking — they share
+# the host's network stack, like two bare-metal terminal nodes (known to connect).
+# If this connects but the bridged version doesn't, Docker's per-container netns
+# isolation is what breaks Hyperswarm's same-host connect; the fix is to make the
+# bridged nodes connect directly by their reachable container IPs.
+services:
+  host-node-a:
+    image: p2p-docker-dev:1.1
+    init: true
+    network_mode: host
+    container_name: host-node-a
+    command: ["node.js", "host-node-a", "public", "spl6-phase1-host", "both"]
+  host-node-b:
+    image: p2p-docker-dev:1.1
+    init: true
+    network_mode: host
+    container_name: host-node-b
+    command: ["node.js", "host-node-b", "public", "spl6-phase1-host", "both"]

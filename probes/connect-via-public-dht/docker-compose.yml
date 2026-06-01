@@ -1,0 +1,18 @@
+# DIAGNOSTIC (not the cluster design): two nodes on the PUBLIC Holepunch DHT.
+#
+# Bisect for the Phase 1 connection wall — peers discover each other on our
+# private single-bootstrap DHT but the UDX stream never completes. If they
+# connect HERE (public DHT) but not there, the fault is private-DHT holepunch
+# coordination, not our code or Docker UDP. Needs internet egress (default
+# bridge has it). Uses the app image built from the repo root.
+services:
+  pub-node-a:
+    image: p2p-docker-dev:1.1
+    init: true
+    container_name: pub-node-a
+    command: ["node.js", "pub-node-a", "public", "spl6-phase1-pub", "both"]
+  pub-node-b:
+    image: p2p-docker-dev:1.1
+    init: true
+    container_name: pub-node-b
+    command: ["node.js", "pub-node-b", "public", "spl6-phase1-pub", "both"]

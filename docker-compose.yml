@@ -1,29 +1,42 @@
-# Phase 0.2 — a few long-running nodes, watched as one stream via ./capture.sh.
+# Phase 1 — a private DHT bootstrap + a few nodes that join a topic and connect.
+#
+# The bootstrap gets a fixed IP: udx (the DHT transport) targets an IP, not a
+# Docker hostname, so nodes are pointed at 172.28.0.10:49737 directly. Flat
+# bridge ⇒ no NAT between nodes (real hole-punch/traversal is Chapter 8).
 #
 # init: true puts tini at PID 1 so SIGTERM (compose down / docker stop) reaches
-# Bare and the node exits cleanly and fast. Without it, Bare-as-PID-1 ignores
-# SIGTERM (the kernel applies no default disposition to PID 1) and the container
-# is SIGKILLed only after the 10s grace.
-#
-# container_name is pinned so the daemon's lifecycle events and the node's own
-# stdout agree on the node name in the merged log.
+# Bare; each process catches it via bare-signals and exits cleanly (emits stop).
 
 x-node: &node
   build: .
-  image: p2p-docker-dev:0.2
+  image: p2p-docker-dev:1.1
   init: true
   restart: "no"
+  networks: [cluster]
 
 services:
+  bootstrap:
+    <<: *node
+    container_name: bootstrap
+    command: ["bootstrap.js", "49737", "172.28.0.10"]
+    networks:
+      cluster:
+        ipv4_address: 172.28.0.10
+
   node-a:
     <<: *node
     container_name: node-a
-    command: ["node.js", "node-a", "2000"]
+    command: ["node.js", "node-a", "172.28.0.10:49737", "spl6-phase1", "both"]
+    depends_on: [bootstrap]
+
   node-b:
     <<: *node
     container_name: node-b
-    command: ["node.js", "node-b", "3000"]
-  node-c:
-    <<: *node
-    container_name: node-c
-    command: ["node.js", "node-c", "5000"]
+    command: ["node.js", "node-b", "172.28.0.10:49737", "spl6-phase1", "both"]
+    depends_on: [bootstrap]
+
+networks:
+  cluster:
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
