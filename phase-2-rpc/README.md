@@ -15,17 +15,16 @@ Defines an Echo RPC service `echo(cid, message) → string`, then:
 
 The whole game is one call — **`createChannel(conn)`** — the exact call spl uses
 over TCP (`spl/avsc-rpc/server`), now on a P2P duplex. "Same protocol, different
-pipe," demonstrated. A clean session (`phase-2-session.jsonl`): connect →
+pipe," demonstrated. A clean session (`session.jsonl`): connect →
 `rpc-channel` → `rpc-call` → `rpc-serve` → `rpc-response` (`echo:ping from node-b`).
 
 ## First correlation id (Tier-1 observability)
 
 The request carries a **cid** (correlation id). In the sample, `cid: "node-b-0"`
 appears in **both** peers' streams — node-b's `rpc-call`/`rpc-response` *and*
-node-a's `rpc-serve`. That's the first **cross-peer trace** (see
-`observability-design.md`): stitch one operation together from separate nodes'
-logs. Here it's a simple per-call id; it settles into the protocol/seam model as
-the fabric matures.
+node-a's `rpc-serve`. That's the first **cross-peer trace**: stitch one operation
+together from separate nodes' logs. Here it's a simple per-call id; it settles
+into the protocol/seam model as the fabric matures.
 
 ## Sourcing the RPC layer (the real work)
 

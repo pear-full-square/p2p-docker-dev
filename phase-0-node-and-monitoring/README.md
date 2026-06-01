@@ -63,7 +63,7 @@ whole life of the cluster — startup → output → removal:
 Every line is `{"ts", "source":"app"|"daemon", "node", "event", …}`. The daemon
 source is authoritative for *came up / went away* (incl. the `die` exit code); the
 app source is *what the node did*. A representative run is kept at
-[`phase-0.2-session.jsonl`](phase-0.2-session.jsonl) — and this JSONL shape is the
+[`session.jsonl`](session.jsonl) — and this JSONL shape is the
 basis for Round-2's automated test analysis. *(Forward view: this same
 "containerised node + one structured event stream" is the foundation for managed,
 monitored swarms.)*

@@ -25,4 +25,4 @@ outbound NAT — a hard hairpin case). The decisive results came from the
 bidirectionally → our code is fine) and **`../udx-on-bridge`** (raw UDX on the
 bridge works → the network is fine). Net: the blocker is HyperDHT holepunch on a
 no-NAT network; fix is `firewalled: false` direct connect. See
-`../../journey/phase-1-peers-connect.md`.
+`../../README.md`.

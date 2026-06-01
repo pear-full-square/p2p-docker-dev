@@ -16,7 +16,7 @@ exchange a hello over the encrypted stream. First real P2P; first bundled deps.*
 - Graceful stop via `bare-signals` (`new Signal('SIGTERM')` → `Bare.exit(0)`),
   so nodes exit 0, not SIGKilled.
 
-A clean session (`journey/phase-1-session.jsonl`): bootstrap-ready → both nodes
+A clean session (`session.jsonl`): bootstrap-ready → both nodes
 `joined` → both `peer-connected` + `hello-received` (bidirectional) → all `die 0`.
 
 ## The connection investigation (why this was not one-shot)

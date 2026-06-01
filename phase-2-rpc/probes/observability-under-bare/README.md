@@ -22,4 +22,4 @@ tracing) under Bare on distroless-cc, and checks whether `hyperswarm` / `hyperdh
 - **Holepunch stack is NOT hypertrace-instrumented** at the versions we bundle —
   so hypertrace would trace *our* classes, not hyperswarm internals.
 
-Feeds the design in `plan/observability-design.md` (in the spl6 repo).
+Feeds the parent project's operational-visibility design.

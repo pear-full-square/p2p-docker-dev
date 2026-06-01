@@ -1,0 +1,42 @@
+# Phase 1 — a private DHT bootstrap + two nodes that join a topic and connect.
+#
+# Cluster config (subnet, bootstrap address/port, topic) is parameterised via
+# .env (see .env.example); capture.sh auto-creates it. The bootstrap gets a fixed
+# IP because udx (the DHT transport) targets an IP, not a Docker hostname. Flat
+# bridge ⇒ no NAT between nodes; nodes run the DHT firewalled:false and connect
+# directly (holepunch is for NAT traversal — see README). init: true ⇒ tini at
+# PID 1 so SIGTERM reaches Bare for a clean stop.
+
+x-node: &node
+  build: .
+  image: p2p-docker-dev:1.0
+  init: true
+  restart: "no"
+  networks: [cluster]
+
+services:
+  bootstrap:
+    <<: *node
+    container_name: bootstrap
+    command: ["bootstrap.js", "${BOOTSTRAP_PORT}", "${BOOTSTRAP_IP}"]
+    networks:
+      cluster:
+        ipv4_address: ${BOOTSTRAP_IP}
+
+  node-a:
+    <<: *node
+    container_name: node-a
+    command: ["node.js", "node-a", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "${TOPIC}", "both"]
+    depends_on: [bootstrap]
+
+  node-b:
+    <<: *node
+    container_name: node-b
+    command: ["node.js", "node-b", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "${TOPIC}", "both"]
+    depends_on: [bootstrap]
+
+networks:
+  cluster:
+    ipam:
+      config:
+        - subnet: ${CLUSTER_SUBNET}

@@ -22,4 +22,4 @@ from `.env.example` if missing.
 Clean bidirectional ping/pong — the bridge passes container-to-container UDP
 fine. So the Phase 1 connection failure was **not** the network; it was HyperDHT
 holepunch coordination (fixed with `firewalled: false` direct connect — see
-`../../journey/phase-1-peers-connect.md`).
+`../../README.md`).
