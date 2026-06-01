@@ -1,0 +1,59 @@
+# Phase 3 — roles & routing. A private DHT bootstrap + two SERVERS each serving a
+# named service (greet, time) + three CLIENTS: one calling 'greet', one 'time',
+# one 'missing' (nobody serves it → no-peer fallback). Each name hashes to its own
+# topic, so a client routes to the matching server purely by the name it targets.
+#
+# Network config is parameterised via .env (see .env.example; capture.sh creates
+# it). Service names are the cluster's roles, set here in the commands.
+
+x-node: &node
+  build: .
+  image: p2p-docker-dev:3.0
+  init: true
+  restart: "no"
+  networks: [cluster]
+
+services:
+  bootstrap:
+    <<: *node
+    container_name: bootstrap
+    command: ["bootstrap.js", "${BOOTSTRAP_PORT}", "${BOOTSTRAP_IP}"]
+    networks:
+      cluster:
+        ipv4_address: ${BOOTSTRAP_IP}
+
+  server-greet:
+    <<: *node
+    container_name: server-greet
+    command: ["node.js", "server-greet", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "server", "greet"]
+    depends_on: [bootstrap]
+
+  server-time:
+    <<: *node
+    container_name: server-time
+    command: ["node.js", "server-time", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "server", "time"]
+    depends_on: [bootstrap]
+
+  client-greet:
+    <<: *node
+    container_name: client-greet
+    command: ["node.js", "client-greet", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "client", "greet"]
+    depends_on: [server-greet, server-time]
+
+  client-time:
+    <<: *node
+    container_name: client-time
+    command: ["node.js", "client-time", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "client", "time"]
+    depends_on: [server-greet, server-time]
+
+  client-missing:
+    <<: *node
+    container_name: client-missing
+    command: ["node.js", "client-missing", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "client", "missing"]
+    depends_on: [server-greet, server-time]
+
+networks:
+  cluster:
+    ipam:
+      config:
+        - subnet: ${CLUSTER_SUBNET}

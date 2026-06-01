@@ -1,0 +1,54 @@
+{"ts":"2026-06-01T14:48:47.676Z","source":"daemon","node":"bootstrap","event":"create","exit":""}
+{"ts":"2026-06-01T14:48:47.768Z","source":"daemon","node":"server-greet","event":"create","exit":""}
+{"ts":"2026-06-01T14:48:47.773Z","source":"daemon","node":"server-time","event":"create","exit":""}
+{"ts":"2026-06-01T14:48:47.862Z","source":"daemon","node":"client-time","event":"create","exit":""}
+{"ts":"2026-06-01T14:48:47.868Z","source":"daemon","node":"client-greet","event":"create","exit":""}
+{"ts":"2026-06-01T14:48:47.868Z","source":"daemon","node":"client-missing","event":"create","exit":""}
+{"ts":"2026-06-01T14:48:48.068Z","source":"daemon","node":"bootstrap","event":"start","exit":""}
+{"ts":"2026-06-01T14:48:48.314Z","source":"daemon","node":"server-time","event":"start","exit":""}
+{"ts":"2026-06-01T14:48:48.369Z","source":"daemon","node":"server-greet","event":"start","exit":""}
+{"ts":"2026-06-01T14:48:48.636Z","source":"daemon","node":"client-missing","event":"start","exit":""}
+{"ts":"2026-06-01T14:48:48.675Z","source":"daemon","node":"client-greet","event":"start","exit":""}
+{"ts":"2026-06-01T14:48:48.725Z","source":"daemon","node":"client-time","event":"start","exit":""}
+{"ts":"2026-06-01T14:48:48.870Z","source":"app","level":30,"time":1780325328803,"node":"client-greet","phase":"3.0","target":"greet","cid":"client-greet-0","event":"route","topic":"************2ab0","msg":"routing to 'greet'"}
+{"ts":"2026-06-01T14:48:48.871Z","source":"app","level":30,"time":1780325328457,"node":"server-time","phase":"3.0","event":"serve","service":"time","topic":"************8e81","msg":"serving 'time'"}
+{"ts":"2026-06-01T14:48:48.873Z","source":"app","level":30,"time":1780325328861,"node":"server-time","phase":"3.0","event":"peer-connected","remote":"************32b8"}
+{"ts":"2026-06-01T14:48:48.874Z","source":"app","level":30,"time":1780325328821,"node":"client-greet","phase":"3.0","target":"greet","cid":"client-greet-0","event":"peer-connected","remote":"************e333"}
+{"ts":"2026-06-01T14:48:48.875Z","source":"app","level":30,"time":1780325328822,"node":"client-greet","phase":"3.0","target":"greet","cid":"client-greet-0","event":"rpc-call","msg":"calling 'greet'"}
+{"ts":"2026-06-01T14:48:48.876Z","source":"app","level":30,"time":1780325328828,"node":"client-greet","phase":"3.0","target":"greet","cid":"client-greet-0","event":"rpc-response","res":"greet: ping from client-greet","msg":"got response"}
+{"ts":"2026-06-01T14:48:48.877Z","source":"app","level":30,"time":1780325328847,"node":"client-time","phase":"3.0","target":"time","cid":"client-time-0","event":"route","topic":"************8e81","msg":"routing to 'time'"}
+{"ts":"2026-06-01T14:48:48.879Z","source":"app","level":30,"time":1780325328864,"node":"client-time","phase":"3.0","target":"time","cid":"client-time-0","event":"peer-connected","remote":"************51a1"}
+{"ts":"2026-06-01T14:48:48.880Z","source":"app","level":30,"time":1780325328865,"node":"client-time","phase":"3.0","target":"time","cid":"client-time-0","event":"rpc-call","msg":"calling 'time'"}
+{"ts":"2026-06-01T14:48:48.881Z","source":"app","level":30,"time":1780325328753,"node":"client-missing","phase":"3.0","target":"missing","cid":"client-missing-0","event":"route","topic":"************0714","msg":"routing to 'missing'"}
+{"ts":"2026-06-01T14:48:48.882Z","source":"app","level":30,"time":1780325328503,"node":"server-greet","phase":"3.0","event":"serve","service":"greet","topic":"************2ab0","msg":"serving 'greet'"}
+{"ts":"2026-06-01T14:48:48.883Z","source":"app","level":30,"time":1780325328817,"node":"server-greet","phase":"3.0","event":"peer-connected","remote":"************236b"}
+{"ts":"2026-06-01T14:48:48.884Z","source":"app","level":30,"time":1780325328827,"node":"server-greet","phase":"3.0","event":"rpc-serve","service":"greet","cid":"client-greet-0","msg":"handled 'greet' call"}
+{"ts":"2026-06-01T14:48:48.885Z","source":"app","level":30,"time":1780325328271,"node":"bootstrap","phase":"3.0","event":"start","port":49737,"host":"172.x.x.x"}
+{"ts":"2026-06-01T14:48:48.887Z","source":"app","level":30,"time":1780325328275,"node":"bootstrap","phase":"3.0","event":"bootstrap-ready","port":49737,"host":"172.x.x.x"}
+{"ts":"2026-06-01T14:48:48.888Z","source":"app","level":30,"time":1780325328870,"node":"server-time","phase":"3.0","event":"rpc-serve","service":"time","cid":"client-time-0","msg":"handled 'time' call"}
+{"ts":"2026-06-01T14:48:48.889Z","source":"app","level":30,"time":1780325328871,"node":"client-time","phase":"3.0","target":"time","cid":"client-time-0","event":"rpc-response","res":"time: ping from client-time","msg":"got response"}
+{"ts":"2026-06-01T14:48:56.758Z","source":"app","level":40,"time":1780325336755,"node":"client-missing","phase":"3.0","target":"missing","cid":"client-missing-0","event":"no-peer","msg":"no peer serving 'missing' within timeout"}
+{"ts":"2026-06-01T14:49:08.818Z","source":"daemon","node":"client-greet","event":"kill","exit":""}
+{"ts":"2026-06-01T14:49:08.818Z","source":"daemon","node":"client-time","event":"kill","exit":""}
+{"ts":"2026-06-01T14:49:08.825Z","source":"daemon","node":"client-missing","event":"kill","exit":""}
+{"ts":"2026-06-01T14:49:09.382Z","source":"daemon","node":"client-greet","event":"stop","exit":""}
+{"ts":"2026-06-01T14:49:09.392Z","source":"daemon","node":"client-greet","event":"die","exit":"0"}
+{"ts":"2026-06-01T14:49:09.403Z","source":"daemon","node":"client-greet","event":"destroy","exit":""}
+{"ts":"2026-06-01T14:49:09.504Z","source":"daemon","node":"client-time","event":"stop","exit":""}
+{"ts":"2026-06-01T14:49:09.514Z","source":"daemon","node":"client-time","event":"die","exit":"0"}
+{"ts":"2026-06-01T14:49:09.527Z","source":"daemon","node":"client-time","event":"destroy","exit":""}
+{"ts":"2026-06-01T14:49:09.661Z","source":"daemon","node":"client-missing","event":"stop","exit":""}
+{"ts":"2026-06-01T14:49:09.675Z","source":"daemon","node":"client-missing","event":"die","exit":"0"}
+{"ts":"2026-06-01T14:49:09.687Z","source":"daemon","node":"client-missing","event":"destroy","exit":""}
+{"ts":"2026-06-01T14:49:09.712Z","source":"daemon","node":"server-time","event":"kill","exit":""}
+{"ts":"2026-06-01T14:49:09.717Z","source":"daemon","node":"server-greet","event":"kill","exit":""}
+{"ts":"2026-06-01T14:49:10.248Z","source":"daemon","node":"server-time","event":"stop","exit":""}
+{"ts":"2026-06-01T14:49:10.260Z","source":"daemon","node":"server-time","event":"die","exit":"0"}
+{"ts":"2026-06-01T14:49:10.273Z","source":"daemon","node":"server-time","event":"destroy","exit":""}
+{"ts":"2026-06-01T14:49:10.403Z","source":"daemon","node":"server-greet","event":"stop","exit":""}
+{"ts":"2026-06-01T14:49:10.413Z","source":"daemon","node":"server-greet","event":"die","exit":"0"}
+{"ts":"2026-06-01T14:49:10.425Z","source":"daemon","node":"server-greet","event":"destroy","exit":""}
+{"ts":"2026-06-01T14:49:10.443Z","source":"daemon","node":"bootstrap","event":"kill","exit":""}
+{"ts":"2026-06-01T14:49:10.917Z","source":"daemon","node":"bootstrap","event":"stop","exit":""}
+{"ts":"2026-06-01T14:49:10.929Z","source":"daemon","node":"bootstrap","event":"die","exit":"0"}
+{"ts":"2026-06-01T14:49:10.941Z","source":"daemon","node":"bootstrap","event":"destroy","exit":""}
