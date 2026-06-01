@@ -1,0 +1,12 @@
+{
+  "name": "observability-under-bare-probe",
+  "private": true,
+  "dependencies": {
+    "pino-bare": "*",
+    "hypertrace": "*",
+    "hyperswarm": "*",
+    "hyperdht": "*",
+    "hypercore": "*",
+    "dht-rpc": "*"
+  }
+}
