@@ -1,6 +1,4 @@
 {
-  "_comment": "What runs where. The manager seeds this into the signed drive at /assignments.json; each worker replicates it and looks up its own name to learn which role to pull + run. Edit + re-seed to re-place responsibilities. One role per worker in 5.1 (multi-role-per-worker needs per-role connection routing — deferred). echo is placed on two workers to show many-workers-one-role.",
-  "worker-a": "echo",
-  "worker-b": "reverse",
-  "worker-c": "echo"
+  "_comment": "What runs where. The manager seeds this into the signed drive at /assignments.json; each worker replicates it and looks up its own name to learn which role(s) to pull + run. A value may be a single role or an array. 5.2: worker-a is assigned BOTH echo and reverse — it serves each on its own named protomux channel over one connection (multi-role-per-worker). Edit + re-seed to re-place responsibilities.",
+  "worker-a": ["echo", "reverse"]
 }

@@ -21,7 +21,7 @@ const makeLog = require('./log')
 const seedHex = Bare.argv[2] || '00'.repeat(32)
 const bootstrapArg = Bare.argv[3] || 'bootstrap:49737'
 
-const log = makeLog({ node: 'manager', phase: '5.1' })
+const log = makeLog({ node: 'manager', phase: '5.2' })
 
 const usePublic = bootstrapArg === 'public'
 const bootstrap = usePublic ? undefined : bootstrapArg.split(',').map((s) => {

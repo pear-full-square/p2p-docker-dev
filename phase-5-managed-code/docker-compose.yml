@@ -1,18 +1,20 @@
 # Phase 5 — managed code distribution. A private DHT bootstrap + a MANAGER that
 # seeds role-code AND an assignment manifest into a signed Hyperdrive + WORKERS
-# that replicate, read the manifest, self-assign, and run their role + CLIENTS that
-# call the services (proving the workers run distributed code).
+# that replicate, self-assign, and run their role(s) + a CLIENT that calls them.
 #
-# 5.1: "what runs where" is data. The manifest (assignments.json, seeded into the
-# drive) places echo on worker-a + worker-c and reverse on worker-b. Workers are
-# NOT told their role on the command line — they look themselves up in the manifest.
+# 5.2 — protomux connection substrate. worker-a is assigned BOTH echo and reverse
+# (assignments.json) and serves each on its own named protomux channel; the client
+# asks for both services and reaches worker-a on ONE connection, opening one channel
+# per service. Replication rides the same kind of connection — no second swarm, no
+# topic-routing. Single concern: the substrate + multi-role-per-worker. (Discovery
+# is unchanged from 5.1; the worker-identity discovery model is left open.)
 #
-# Trust anchor: the manager derives its drive from CLUSTER_SEED; workers are
+# Trust anchor: the manager derives its drive from CLUSTER_SEED; the worker is
 # configured with the public DRIVE_KEY only. Config is parameterised via .env.
 
 x-node: &node
   build: .
-  image: p2p-docker-dev:5.1
+  image: p2p-docker-dev:5.2
   init: true
   restart: "no"
   networks: [cluster]
@@ -32,37 +34,20 @@ services:
     command: ["manager.js", "${CLUSTER_SEED}", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}"]
     depends_on: [bootstrap]
 
-  # Workers — identical launch except their name. Each self-assigns from the manifest.
+  # One worker assigned BOTH roles (see assignments.json) — multi-role-per-worker.
   worker-a:
     <<: *node
     container_name: worker-a
     command: ["worker.js", "worker-a", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "${DRIVE_KEY}", "${EXEC}"]
     depends_on: [bootstrap, manager]
 
-  worker-b:
+  # One client asking for both services — reaches worker-a on one connection, a
+  # named channel per service.
+  client:
     <<: *node
-    container_name: worker-b
-    command: ["worker.js", "worker-b", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "${DRIVE_KEY}", "${EXEC}"]
-    depends_on: [bootstrap, manager]
-
-  worker-c:
-    <<: *node
-    container_name: worker-c
-    command: ["worker.js", "worker-c", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "${DRIVE_KEY}", "${EXEC}"]
-    depends_on: [bootstrap, manager]
-
-  # Clients — one per service. echo is served by worker-a + worker-c; reverse by worker-b.
-  client-echo:
-    <<: *node
-    container_name: client-echo
-    command: ["client.js", "client-echo", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "echo"]
-    depends_on: [bootstrap, worker-a, worker-c]
-
-  client-reverse:
-    <<: *node
-    container_name: client-reverse
-    command: ["client.js", "client-reverse", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "reverse"]
-    depends_on: [bootstrap, worker-b]
+    container_name: client
+    command: ["client.js", "client", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "echo,reverse"]
+    depends_on: [bootstrap, worker-a]
 
 networks:
   cluster:

@@ -9,6 +9,8 @@
     "bare-signals": "^4.2.0",
     "corestore": "7.10.0",
     "hyperdrive": "13.3.2",
+    "protomux": "3.11.0",
+    "compact-encoding": "3.1.0",
     "b4a": "1.8.1",
     "bare-fs": "^4.7.0",
     "streamx": "^2.26.0",

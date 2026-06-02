@@ -15,7 +15,7 @@ RUN npm install
 RUN git clone --depth 1 https://github.com/bare-for-pear/avsc.git     node_modules/avsc \
  && git clone --depth 1 https://github.com/bare-for-pear/avsc-rpc.git node_modules/avsc-rpc \
  && rm -rf node_modules/avsc/.git node_modules/avsc-rpc/.git
-COPY bootstrap.js manager.js worker.js client.js log.js assignments.json ./
+COPY bootstrap.js manager.js worker.js client.js log.js channel.js assignments.json ./
 COPY roles ./roles
 
 FROM gcr.io/distroless/cc-debian12
@@ -25,7 +25,7 @@ COPY --from=build --chmod=0755 \
 COPY --from=build /usr/lib/x86_64-linux-gnu/libatomic.so.1 /usr/lib/x86_64-linux-gnu/libatomic.so.1
 WORKDIR /app
 COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/bootstrap.js /app/manager.js /app/worker.js /app/client.js /app/log.js /app/assignments.json ./
+COPY --from=build /app/bootstrap.js /app/manager.js /app/worker.js /app/client.js /app/log.js /app/channel.js /app/assignments.json ./
 COPY --from=build /app/roles ./roles
 ENTRYPOINT ["/usr/local/bin/bare"]
 CMD ["manager.js"]

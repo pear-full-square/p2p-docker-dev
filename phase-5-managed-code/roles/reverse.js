@@ -1,18 +1,14 @@
-// Role: reverse — a second unit of managed code, distinct from echo, so the
-// assignment manifest has something to place differently. Same contract as echo
-// (the worker hands it a context; it stands up an avsc-rpc service), but it
-// reverses the payload instead of echoing it.
+// Role: reverse — a second unit of managed code, distinct from echo, so a worker
+// can be assigned BOTH and serve each on its own named protomux channel. Same 5.2
+// contract as echo (see echo.js); reverses the payload.
 module.exports = {
   name: 'reverse',
   start (ctx) {
-    const { swarm, name, log, Service, topicFor } = ctx
+    const { swarm, name, log, Service, topicFor, channelStream } = ctx
 
     const svc = Service.forProtocol({
-      protocol: 'Call',
-      namespace: 'spl6.poc',
-      messages: {
-        call: { request: [{ name: 'cid', type: 'string' }, { name: 'payload', type: 'string' }], response: 'string' }
-      }
+      protocol: 'Call', namespace: 'spl6.poc',
+      messages: { call: { request: [{ name: 'cid', type: 'string' }, { name: 'payload', type: 'string' }], response: 'string' } }
     })
 
     const server = svc.createServer()
@@ -22,10 +18,13 @@ module.exports = {
       cb(null, `reverse@${name}: ${reversed}`)
     })
 
-    ctx.onServicePeer((conn) => server.createChannel(conn))
-
     const topic = topicFor('reverse')
     swarm.join(topic, { server: true, client: false })
     log.info({ event: 'role-serving', role: 'reverse', topic: topic.toString('hex').slice(0, 16) }, "role 'reverse' serving")
+
+    return {
+      protocol: 'reverse',
+      accept (mux) { mux.pair({ protocol: 'reverse' }, () => server.createChannel(channelStream(mux, 'reverse'))) }
+    }
   }
 }

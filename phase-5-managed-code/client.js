@@ -1,28 +1,31 @@
-// Phase 5 — the CLIENT. The end-to-end proof: it calls the 'echo' service and gets
-// a reply — but nothing shipped that service. The worker pulled the role-code from
-// the manager's signed drive and started it. A successful response is proof the
-// managed code is live on the worker.
+// Phase 5 — the CLIENT. The end-to-end proof: it calls the services and gets
+// replies — but nothing shipped them. A worker pulled the role-code from the
+// manager's signed drive and ran it.
 //
-//   bare client.js <name> <bootstrap host:port|public> <service-name> [--debug]
+// 5.2 — the client can ask for SEVERAL services (comma-separated). When they live
+// on the same worker, the client reaches it on ONE connection and opens ONE NAMED
+// protomux channel per service over that single connection — the multi-role payoff:
+// many logical services, one stream, no collision.
+//
+//   bare client.js <name> <bootstrap host:port|public> <svc[,svc...]> [--debug]
 const Hyperswarm = require('hyperswarm')
 const DHT = require('hyperdht')
+const Protomux = require('protomux')
 const sodium = require('sodium-native')
 const Signal = require('bare-signals')
 const { Service } = require('avsc-rpc')
+const { channelStream } = require('./channel')
 const makeLog = require('./log')
 
 const name = Bare.argv[2] || 'client-0'
 const bootstrapArg = Bare.argv[3] || 'bootstrap:49737'
-const serviceName = Bare.argv[4] || 'echo'
+const services = (Bare.argv[4] || 'echo').split(',')
 
-const log = makeLog({ node: name, phase: '5.1' })
+const log = makeLog({ node: name, phase: '5.2' })
 
 const svc = Service.forProtocol({
-  protocol: 'Call',
-  namespace: 'spl6.poc',
-  messages: {
-    call: { request: [{ name: 'cid', type: 'string' }, { name: 'payload', type: 'string' }], response: 'string' }
-  }
+  protocol: 'Call', namespace: 'spl6.poc',
+  messages: { call: { request: [{ name: 'cid', type: 'string' }, { name: 'payload', type: 'string' }], response: 'string' } }
 })
 
 function topicFor (n) {
@@ -39,31 +42,39 @@ const swarm = usePublic
   ? new Hyperswarm({})
   : new Hyperswarm({ dht: new DHT({ bootstrap, firewalled: false, port: 49800 }) })
 
-const topic = topicFor(serviceName)
-let client = null
-let seq = 0
+const clients = {}   // service -> avsc client (one named channel each)
 
 swarm.on('connection', (conn, info) => {
-  log.info({ event: 'peer-connected', remote: info.publicKey.toString('hex').slice(0, 16) }, `connected to '${serviceName}' provider`)
+  log.info({ event: 'peer-connected', remote: info.publicKey.toString('hex').slice(0, 16) }, 'connected to a provider')
   conn.on('error', () => {})
-  client = svc.createClient({ buffering: true })
-  client.createChannel(conn)
+  const mux = Protomux.from(conn)
+  // Open one named channel per requested service over this single connection.
+  for (const service of services) {
+    if (clients[service]) continue
+    const client = svc.createClient({ buffering: true })
+    client.createChannel(channelStream(mux, service))
+    clients[service] = client
+    log.info({ event: 'channel-open', service }, `opened '${service}' channel`)
+  }
 })
 
-const discovery = swarm.join(topic, { server: false, client: true })
-log.info({ event: 'route', service: serviceName, topic: topic.toString('hex').slice(0, 16) }, `routing to '${serviceName}'`)
+const discoveries = services.map((service) => {
+  log.info({ event: 'route', service, topic: topicFor(service).toString('hex').slice(0, 16) }, `routing to '${service}'`)
+  return swarm.join(topicFor(service), { server: false, client: true })
+})
 
+let seq = 0
 const iv = setInterval(() => {
-  // Re-query the DHT until a provider is found — the worker may announce the
-  // service AFTER the client's first lookup (it replicates+starts the role first),
-  // and an initial lookup that misses won't re-query on its own for a while.
-  if (!client) { log.debug({ event: 'idle' }, 'no provider yet — refreshing lookup'); discovery.refresh().catch(() => {}); return }
-  const cid = name + '-' + seq
-  log.info({ event: 'rpc-call', cid }, `calling '${serviceName}'`)
-  client.call(cid, 'ping #' + seq, (err, res) => {
-    if (err) log.error({ event: 'rpc-error', cid, err: String(err.message || err).slice(0, 80) })
-    else log.info({ event: 'rpc-response', cid, res }, 'got response from managed code')
-  })
+  const ready = services.filter((s) => clients[s])
+  if (ready.length === 0) { log.debug({ event: 'idle' }, 'no provider yet — refreshing'); discoveries.forEach((d) => d.refresh().catch(() => {})); return }
+  for (const service of ready) {
+    const cid = name + '-' + service + '-' + seq
+    log.info({ event: 'rpc-call', service, cid }, `calling '${service}'`)
+    clients[service].call(cid, 'ping #' + seq, (err, res) => {
+      if (err) log.error({ event: 'rpc-error', service, cid, err: String(err.message || err).slice(0, 80) })
+      else log.info({ event: 'rpc-response', service, cid, res }, 'got response from managed code')
+    })
+  }
   seq++
 }, 3000)
 
