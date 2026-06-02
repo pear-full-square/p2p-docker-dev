@@ -1,0 +1,25 @@
+# reactive-core — run 2026-06-02T17:36:38Z
+
+## build
+#19 exporting layers 0.3s done
+#19 writing image sha256:************************************************************6f1f done
+#19 naming to docker.io/library/reactive-core-probe 0.0s done
+#19 DONE 0.4s
+
+## cascade: source append -> transform reacts+emits -> sink reacts (live tail, push)
+{"stage":"source","appended":"event-0","head":1}
+{"stage":"transform","reactedTo":"event-0","emitted":"squared-0","cursor":1}
+{"stage":"sink","reacted":"squared-0","cursor":1}
+{"stage":"source","appended":"event-1","head":2}
+{"stage":"transform","reactedTo":"event-1","emitted":"squared-1","cursor":2}
+{"stage":"sink","reacted":"squared-1","cursor":2}
+{"stage":"source","appended":"event-2","head":3}
+{"stage":"transform","reactedTo":"event-2","emitted":"squared-4","cursor":3}
+{"stage":"sink","reacted":"squared-4","cursor":3}
+{"stage":"source","appended":"event-3","head":4}
+{"stage":"transform","reactedTo":"event-3","emitted":"squared-9","cursor":4}
+{"stage":"sink","reacted":"squared-9","cursor":4}
+{"done":true,"cascaded":4}
+
+## image size
+334MB
