@@ -1,4 +1,5 @@
 {
-  "_comment": "What runs where. The manager seeds this into the signed drive at /assignments.json; each worker replicates it and looks up its own name to learn which role(s) to pull + run. A value may be a single role or an array. 5.2: worker-a is assigned BOTH echo and reverse — it serves each on its own named protomux channel over one connection (multi-role-per-worker). Edit + re-seed to re-place responsibilities.",
-  "worker-a": ["echo", "reverse"]
+  "_comment": "What runs where. The manager combines this (authored roles) with each worker's derived public key into a signed /registry.json on the drive. A value may be a single role or an array. 5.3: worker-a AND worker-b both run echo — so 'find any echo provider' is ambiguous, and the client uses connect-by-key to target worker-b specifically (the reply names the worker, proving which node served it). Edit + re-seed to re-place responsibilities.",
+  "worker-a": ["echo"],
+  "worker-b": ["echo"]
 }

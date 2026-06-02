@@ -1,0 +1,11 @@
+{
+  "name": "connect-by-key-probe",
+  "private": true,
+  "comment": "Just the swarm stack — no storage, no avsc. Proves the base 'target a specific node' op (joinPeer by public key) and deterministic identity-key derivation under Bare.",
+  "dependencies": {
+    "hyperswarm": "^4.17.0",
+    "hyperdht": "^6.32.0",
+    "sodium-native": "^5.1.0",
+    "b4a": "1.8.1"
+  }
+}

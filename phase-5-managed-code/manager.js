@@ -14,6 +14,7 @@ const DHT = require('hyperdht')
 const Corestore = require('corestore')
 const Hyperdrive = require('hyperdrive')
 const Signal = require('bare-signals')
+const sodium = require('sodium-native')
 const b4a = require('b4a')
 const fs = require('bare-fs')
 const makeLog = require('./log')
@@ -21,7 +22,17 @@ const makeLog = require('./log')
 const seedHex = Bare.argv[2] || '00'.repeat(32)
 const bootstrapArg = Bare.argv[3] || 'bootstrap:49737'
 
-const log = makeLog({ node: 'manager', phase: '5.2' })
+const log = makeLog({ node: 'manager', phase: '5.3' })
+
+// A worker's identity keypair is derived from the cluster seed + its name. The
+// manager (holding the seed) computes every worker's PUBLIC key for the registry; a
+// worker is handed only its own derived secret (the seed never leaves the manager,
+// H being one-way). Same derivation as the worker — the keys match.
+function workerKeyPair (seed, name) {
+  const s = b4a.alloc(32)
+  sodium.crypto_generichash(s, b4a.concat([seed, b4a.from(name)]))
+  return DHT.keyPair(s)
+}
 
 const usePublic = bootstrapArg === 'public'
 const bootstrap = usePublic ? undefined : bootstrapArg.split(',').map((s) => {
@@ -44,11 +55,21 @@ async function main () {
     log.info({ event: 'seeded-role', path: '/roles/' + f, bytes: src.length }, `seeded role '${f.replace('.js', '')}'`)
   }
 
-  // Seed the assignment manifest — "what runs where". Workers replicate it and
-  // self-assign by name. Edit assignments.json + restart to re-place roles.
-  const manifest = fs.readFileSync('./assignments.json')
-  await drive.put('/assignments.json', manifest)
-  log.info({ event: 'seeded-manifest', path: '/assignments.json', bytes: manifest.length }, 'seeded assignment manifest')
+  // Build + seed the REGISTRY — the signed directory binding each worker's identity
+  // (public key) to its assigned roles, derived from the hand-authored assignments.
+  // Doubles as placement ("what runs where") AND directory ("how to reach a worker
+  // by key"). Workers read their roles here; clients resolve a target worker's key.
+  const assignments = JSON.parse(b4a.toString(fs.readFileSync('./assignments.json')))
+  const registry = {}
+  for (const name of Object.keys(assignments)) {
+    if (name.startsWith('_')) continue
+    const roles = Array.isArray(assignments[name]) ? assignments[name] : [assignments[name]]
+    const kp = workerKeyPair(seed, name)
+    registry[name] = { key: b4a.toString(kp.publicKey, 'hex'), roles }
+    log.info({ event: 'registered', worker: name, key: registry[name].key, roles }, `registered '${name}'`)
+  }
+  await drive.put('/registry.json', b4a.from(JSON.stringify(registry)))
+  log.info({ event: 'seeded-registry', path: '/registry.json', workers: Object.keys(registry).length }, 'seeded signed registry')
 
   const swarm = usePublic
     ? new Hyperswarm({})

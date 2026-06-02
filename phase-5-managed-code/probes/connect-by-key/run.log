@@ -1,0 +1,14 @@
+# connect-by-key — run 2026-06-02T13:02:40Z
+
+## build
+#17 exporting layers 0.2s done
+#17 writing image sha256:************************************************************b4d4 done
+#17 naming to docker.io/library/connect-by-key-probe 0.0s done
+#17 DONE 0.2s
+
+## derive (deterministic identity keys) + connect-by-key (joinPeer, no shared topic)
+{"proof":"derive","deterministic":true,"distinct":true,"workerA":"************8c1a","workerB":"************a1f6"}
+{"proof":"connect-by-key","reached":"************a1f6","matchesTarget":true,"sharedTopic":false}
+
+## image size
+148MB

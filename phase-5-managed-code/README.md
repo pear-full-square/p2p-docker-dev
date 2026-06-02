@@ -7,42 +7,57 @@ pull their role, and **run it**. Clients call the services, proving the workers 
 code distributed to them at runtime. This is where the roadmap invariant becomes
 real: **the application owns all runtime code, trust = a signed key.***
 
-## What it does (5.2)
+## What it does (5.3)
 
-A bootstrap + a **manager** + a generic **worker** assigned *both* roles + a
-**client** asking for both services:
+A bootstrap + a **manager** + **two workers** (both running `echo`) + a **client**
+that targets one of them *by identity*:
 
-1. **manager** derives a Hyperdrive from `CLUSTER_SEED` (the app's signing secret),
-   seeds every `roles/*.js` (`echo`, `reverse`) **and `assignments.json`** into it,
-   and serves the drive on the private DHT. The drive key is logged — it equals
-   `DRIVE_KEY` in `.env`.
-2. the **worker** is configured with `DRIVE_KEY` only (never the seed) — and *not*
-   told its role. It replicates the drive read-only, reads the **manifest**, looks
-   up its own name to **self-assign** (here `["echo","reverse"]`), pulls each role's
-   source, and **runs it**. (No-role fallback: a worker absent from the manifest
-   stays up and idles.)
-3. each pulled **role** stands up an `avsc-rpc` service and serves on its **own
-   named protomux channel** — distributed code, multiplexed.
-4. the **client** asks for `echo,reverse`, reaches worker-a on **one connection**,
-   and opens **one named channel per service** over it. Both reply
-   (`echo@worker-a: ping #N`, `reverse@worker-a: 5# gnip`) — proof the managed code
-   is live. `session.jsonl`: one `peer-connected`, two `channel-open`, 26
-   `rpc-call`/`rpc-serve`/`rpc-response` (13 per service) on the single connection.
+1. **manager** derives a Hyperdrive from `CLUSTER_SEED`, seeds every `roles/*.js`,
+   derives each worker's **identity keypair** (`H(CLUSTER_SEED‖name)` → `DHT.keyPair`),
+   and seeds a signed **registry** `/registry.json` = `name → { key, roles }`. The
+   drive key is logged — it equals `DRIVE_KEY` in `.env`.
+2. each **worker** is handed only *its own* derived identity secret (never the seed).
+   Its swarm runs under that keypair, so it is **reachable by key**. It replicates the
+   drive, reads the registry to **self-assign** its roles, pulls them, and serves each
+   on its own named protomux channel.
+3. the **client** replicates the drive, reads the registry, **resolves worker-b's
+   public key**, and connects to it directly with `swarm.joinPeer` — **no service
+   topic**. It opens the `echo` channel over that connection and calls.
+4. every reply is `echo@worker-b` and **worker-a serves nothing** — proof that
+   connect-by-key reached the *specific* targeted node, not "any echo provider".
+   `session.jsonl`: client `resolve` → `target` → `reached-target` → 13 RPC triples,
+   all on worker-b; worker-a has zero `rpc-serve`.
 
 ```
 cd phase-5-managed-code && ./capture.sh     # Ctrl-C to stop; writes a session log
 ```
 
-## "What runs where" is data (the manifest)
+## "What runs where" is data — the signed registry
 
-`assignments.json` maps each worker to a role or **array of roles** (here
-`{ "worker-a": ["echo","reverse"] }`), seeded into the signed drive at
-`/assignments.json`. Placement is **data, distributed in the drive** — not
-configuration baked into each worker's launch. Edit the manifest + re-seed to
-re-place responsibilities. Because it rides the signed drive, the manifest carries
-the same trust as the code. (Live re-assignment — the manager changing the manifest
-and workers re-picking-up without a restart — is a later iteration; the worker reads
-it once at startup.)
+`assignments.json` (authored) maps each worker to a role or **array of roles**. The
+manager combines it with each worker's **derived public key** into a signed
+**registry** `/registry.json` = `name → { key, roles }`, seeded into the drive. It
+does double duty: **placement** (which roles a worker runs) *and* **directory** (how
+to reach a worker by key). Workers read their roles from it; the client resolves a
+target worker's key from it. Because it rides the signed drive, it carries the same
+trust as the code. Edit `assignments.json` + re-seed to re-place responsibilities.
+(Live re-assignment without a restart is a later step; it's read once at startup.)
+
+## Worker identity & connect-by-key (5.3)
+
+Each worker has a **keyed identity**: its secret is `H(CLUSTER_SEED ‖ name)` (derived
+by the manager and handed to the worker; the seed itself never leaves the manager, H
+being one-way), and its swarm runs under the matching keypair — so it is reachable at
+its public key. The manager independently derives the *same* public key for the
+registry, so they match without any registration round-trip.
+
+**Targeting a specific worker** is then the base op `swarm.joinPeer(publicKey)` —
+a direct connection to *that* node, independent of any topic. This is why both
+workers can run `echo` yet the client deterministically reaches worker-b: it resolves
+worker-b's key from the registry and connects by key, rather than discovering "any
+echo provider". HyperDHT's core primitive is connect-to-key; topic discovery (used
+for the drive and, in earlier iterations, services) is the discover-many layer above
+it. De-risked in `probes/connect-by-key`.
 
 ## Trust = a signed key (intrinsic, not bolted on)
 
@@ -95,22 +110,21 @@ channel↔duplex adapter (`channel.js`). All de-risked in
 `probes/avsc-rpc-on-protomux`. This is the substrate spl's many-handlers-per-peer
 will inherit in Round 3.
 
-## Open: how a multi-role worker is discovered
+## Two addressing modes — both now realized
 
-5.2 keeps 5.1's **per-service-topic** discovery unchanged (a multi-role worker joins
-each of its services' topics; a client finds it per service). The protomux substrate
-is **neutral** to this — so the discovery model is a separate, still-open question,
-deliberately not settled here. Two candidates under exploration:
+We treat addressing as *building blocks*, not a single chosen design. Both modes now
+exist in the cluster, for different needs:
 
-- **per-service topic** *(used now)* — discovery stays per service; the worker is
-  reachable on each role's topic. Smallest step; no client-side placement lookup.
-- **worker identity / a worker topic** — a worker announces *itself*; a client that
-  wants several services from one worker addresses the worker and selects services by
-  channel name. Fewer topics, gives the worker a first-class identity — but pushes a
-  placement lookup onto the client.
+- **service-addressed** (per-service topic; phases 3–5.2) — "find *any* provider of
+  `echo`". Anycast; good for interchangeable, stateless work and spreading a service
+  across workers.
+- **identity-addressed** (connect-by-key; 5.3) — "reach *worker-b* specifically".
+  Unicast to a named node; the base op for management, state, and per-node
+  responsibility — and the more foundational of the two (HyperDHT's core primitive).
 
-Both are live; neither is chosen. (A future single-concern step explores the
-worker-identity model.)
+The registry binds them: a worker's identity key sits next to its roles, so a
+service call can resolve through the registry to a worker key and become a
+connect-by-key. The protomux substrate is neutral to *how* you found the node.
 
 ## Gotchas pinned (see `probes/`)
 
@@ -135,13 +149,18 @@ worker-identity model.)
   + runs one role, a client proves it live.
 - **5.1** made placement **data-driven**: multiple workers self-assigning roles from
   the signed manifest, including a shared role.
-- **5.2** *(this)* puts the connection on **protomux** (named channels) — so one
-  worker runs **multiple roles**, each on its own channel, replication alongside, on
-  one connection. Single concern: the substrate + multi-role-per-worker.
+- **5.2** put the connection on **protomux** (named channels) — one worker runs
+  **multiple roles**, each on its own channel, replication alongside, on one
+  connection. (The substrate still stands; the 5.3 default topology just assigns one
+  role each to keep the targeting demo crisp.)
+- **5.3** *(this)* gives each worker a **keyed identity** and adds **connect-by-key**
+  — the base "target a specific worker" op, with the manager publishing a signed
+  registry of `name → {key, roles}`. Single concern: identity + targeting.
 
-Honest scope: roles + manifest physically ship in the shared image too, but each
+Honest scope: roles + registry physically ship in the shared image too, but each
 worker's code path *only ever obtains them by replication* — proving the
-distribution path. Deliberately deferred (each a future single-concern step):
-**discovery model** (the worker-identity option above), **live re-assignment**
-(manager edits the manifest → workers re-pick-up without restart), and true
-drive-as-module-root resolution (the deep Pear-loader path). Image tag: `5.2`.
+distribution path. Deliberately deferred (each a future single-concern step, tracked
+in `plan/p2p-building-blocks.md`): **live re-assignment** (manager edits the manifest
+→ workers re-pick-up without restart), **pub/sub over protomux**, membership/health,
+mutable shared structure (Hyperbee/Autobase), and true drive-as-module-root execution
+(the deep Pear-loader path). Image tag: `5.3`.

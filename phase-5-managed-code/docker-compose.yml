@@ -1,20 +1,20 @@
 # Phase 5 — managed code distribution. A private DHT bootstrap + a MANAGER that
-# seeds role-code AND an assignment manifest into a signed Hyperdrive + WORKERS
-# that replicate, self-assign, and run their role(s) + a CLIENT that calls them.
+# seeds role-code + a signed REGISTRY (name -> {key, roles}) into a Hyperdrive +
+# WORKERS that replicate, self-assign, and serve their role(s) + a CLIENT.
 #
-# 5.2 — protomux connection substrate. worker-a is assigned BOTH echo and reverse
-# (assignments.json) and serves each on its own named protomux channel; the client
-# asks for both services and reaches worker-a on ONE connection, opening one channel
-# per service. Replication rides the same kind of connection — no second swarm, no
-# topic-routing. Single concern: the substrate + multi-role-per-worker. (Discovery
-# is unchanged from 5.1; the worker-identity discovery model is left open.)
+# 5.3 — worker identity + connect-by-key. Each worker's swarm uses a derived identity
+# keypair, so it is reachable BY KEY (not only via service topics). Both worker-a and
+# worker-b run echo; the client resolves worker-b's key from the signed registry and
+# connects to it directly (swarm.joinPeer) — targeting a SPECIFIC worker. The reply
+# (echo@worker-b) proves which node served it. Single concern: identity + the base
+# "target a specific node" op.
 #
-# Trust anchor: the manager derives its drive from CLUSTER_SEED; the worker is
-# configured with the public DRIVE_KEY only. Config is parameterised via .env.
+# Trust anchor: the manager derives the drive + worker keys from CLUSTER_SEED; workers
+# get only their own derived identity secret. Config is parameterised via .env.
 
 x-node: &node
   build: .
-  image: p2p-docker-dev:5.2
+  image: p2p-docker-dev:5.3
   init: true
   restart: "no"
   networks: [cluster]
@@ -34,20 +34,25 @@ services:
     command: ["manager.js", "${CLUSTER_SEED}", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}"]
     depends_on: [bootstrap]
 
-  # One worker assigned BOTH roles (see assignments.json) — multi-role-per-worker.
+  # Two workers, both running echo (per the registry) — each a keyed identity.
   worker-a:
     <<: *node
     container_name: worker-a
-    command: ["worker.js", "worker-a", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "${DRIVE_KEY}", "${EXEC}"]
+    command: ["worker.js", "worker-a", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "${DRIVE_KEY}", "${WORKER_A_SEED}", "${EXEC}"]
     depends_on: [bootstrap, manager]
 
-  # One client asking for both services — reaches worker-a on one connection, a
-  # named channel per service.
+  worker-b:
+    <<: *node
+    container_name: worker-b
+    command: ["worker.js", "worker-b", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "${DRIVE_KEY}", "${WORKER_B_SEED}", "${EXEC}"]
+    depends_on: [bootstrap, manager]
+
+  # Targets a specific worker by key (resolved from the registry), not "any echo".
   client:
     <<: *node
     container_name: client
-    command: ["client.js", "client", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "echo,reverse"]
-    depends_on: [bootstrap, worker-a]
+    command: ["client.js", "client", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "${DRIVE_KEY}", "${TARGET_WORKER}", "${TARGET_SERVICE}"]
+    depends_on: [bootstrap, worker-a, worker-b]
 
 networks:
   cluster:

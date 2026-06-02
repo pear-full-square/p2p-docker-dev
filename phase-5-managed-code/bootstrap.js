@@ -9,7 +9,7 @@ const makeLog = require('./log')
 const port = Number(Bare.argv[2]) || 49737
 const host = Bare.argv[3] || '127.0.0.1'
 
-const log = makeLog({ node: 'bootstrap', phase: '5.2' })
+const log = makeLog({ node: 'bootstrap', phase: '5.3' })
 
 const node = DHT.bootstrapper(port, host)
 log.info({ event: 'start', port, host })

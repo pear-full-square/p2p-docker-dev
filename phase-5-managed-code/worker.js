@@ -32,9 +32,10 @@ const makeLog = require('./log')
 const name = Bare.argv[2] || 'worker-0'
 const bootstrapArg = Bare.argv[3] || 'bootstrap:49737'
 const driveKeyHex = Bare.argv[4]
-const execMode = Bare.argv[5] || 'memory'
+const idSeedHex = Bare.argv[5]   // this worker's identity secret (= H(clusterSeed || name))
+const execMode = Bare.argv[6] || 'memory'
 
-const log = makeLog({ node: name, phase: '5.2' })
+const log = makeLog({ node: name, phase: '5.3' })
 
 function topicFor (n) {
   const t = Buffer.alloc(32)
@@ -61,13 +62,21 @@ async function main () {
   if (!driveKeyHex) { log.error({ event: 'fatal', err: 'no DRIVE_KEY configured' }); Bare.exit(1) }
   const driveKey = b4a.from(driveKeyHex, 'hex')
 
+  // Identity: this worker's swarm uses its derived keypair, so it is reachable by
+  // key (clients can joinPeer its public key — the "target a specific worker" op),
+  // not only via service topics. The secret was derived by the manager as
+  // H(clusterSeed || name) and handed to the worker; the public key is in the registry.
+  if (!idSeedHex) { log.error({ event: 'fatal', err: 'no identity seed configured' }); Bare.exit(1) }
+  const keyPair = DHT.keyPair(b4a.from(idSeedHex, 'hex'))
+  log.info({ event: 'identity', publicKey: b4a.toString(keyPair.publicKey, 'hex') }, 'worker identity ready')
+
   const usePublic = bootstrapArg === 'public'
   const bootstrap = usePublic ? undefined : bootstrapArg.split(',').map((s) => {
     const [host, port] = s.split(':'); return { host, port: Number(port) }
   })
   const swarm = usePublic
-    ? new Hyperswarm({})
-    : new Hyperswarm({ dht: new DHT({ bootstrap, firewalled: false, port: 49800 }) })
+    ? new Hyperswarm({ keyPair })
+    : new Hyperswarm({ keyPair, dht: new DHT({ bootstrap, firewalled: false, port: 49800 }) })
 
   const store = new Corestore('/tmp/worker-store')
   const drive = new Hyperdrive(store, driveKey)
@@ -92,12 +101,11 @@ async function main () {
   await drive.update()
   done()
 
-  // SELF-ASSIGN: read the signed manifest, look up this worker's role(s) (string or array).
-  const manifestBuf = await drive.get('/assignments.json', { wait: true })
-  if (!manifestBuf) { log.error({ event: 'fatal', err: 'no assignment manifest on drive' }); Bare.exit(1) }
-  const manifest = JSON.parse(b4a.toString(manifestBuf))
-  const assigned = manifest[name]
-  const roleNames = Array.isArray(assigned) ? assigned : (assigned ? [assigned] : [])
+  // SELF-ASSIGN: read the signed registry, look up this worker's roles by name.
+  const registryBuf = await drive.get('/registry.json', { wait: true })
+  if (!registryBuf) { log.error({ event: 'fatal', err: 'no registry on drive' }); Bare.exit(1) }
+  const registry = JSON.parse(b4a.toString(registryBuf))
+  const roleNames = (registry[name] && registry[name].roles) || []
   if (roleNames.length === 0) {
     log.warn({ event: 'no-assignment', worker: name }, `no role assigned to '${name}' — idling`)
   } else {
