@@ -1,0 +1,20 @@
+{
+  "name": "avsc-rpc-on-protomux-probe",
+  "private": true,
+  "comment": "protomux + compact-encoding (the multiplexer Hyperswarm/corestore already use), the storage stack, and a real secret-stream to model a Hyperswarm conn. avsc + avsc-rpc are git-cloned in the Dockerfile (their bare-* sibling deps listed here). Storage + mux versions pinned to what the probe confirmed.",
+  "dependencies": {
+    "protomux": "3.11.0",
+    "compact-encoding": "3.1.0",
+    "@hyperswarm/secret-stream": "6.9.1",
+    "corestore": "7.10.0",
+    "hyperdrive": "13.3.2",
+    "b4a": "1.8.1",
+    "streamx": "2.26.0",
+    "bare-buffer": "^3.6.0",
+    "bare-events": "^2.8.2",
+    "bare-stream": "^2.13.0",
+    "bare-crypto": "^1.13.4",
+    "bare-fs": "^4.7.0",
+    "bare-path": "^3.0.0"
+  }
+}

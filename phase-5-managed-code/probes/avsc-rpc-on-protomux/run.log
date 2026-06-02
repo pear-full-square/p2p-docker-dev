@@ -1,0 +1,21 @@
+# avsc-rpc-on-protomux — run 2026-06-02T06:38:01Z
+
+## build
+#20 exporting layers 0.4s done
+#20 writing image sha256:************************************************************573a done
+#20 naming to docker.io/library/avsc-rpc-on-protomux-probe 0.0s done
+#20 DONE 0.4s
+
+## load + versions (load.js)
+{"ok":true,"loaded":{"protomux":"function","rawEncoding":"object","service":"function"},"versions":{"protomux":"3.11.0","compact-encoding":"3.1.0","corestore":"7.10.0","hyperdrive":"13.3.2"}}
+
+## proof 1 — two avsc-rpc services over two named protomux channels (rpc.js)
+{"channel":"echo","res":"echo: ping"}
+{"channel":"reverse","res":"reverse: gnip"}
+
+## proof 2 — replication + avsc-rpc coexist on one connection (coexist.js)
+{"proof":"replication","pulled":true,"bytes":18}
+{"proof":"rpc-same-conn","res":"echo: ping"}
+
+## image size
+366MB
