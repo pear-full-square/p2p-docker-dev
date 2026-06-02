@@ -13,12 +13,14 @@ journey; the latest is the current product.
 
 ## The product, right now
 
-The cluster is now **managed**: a manager distributes role-code over a signed
-Hyperdrive and a generic worker pulls and runs it.
+The cluster is now **managed**: a manager distributes role-code *and an assignment
+manifest* over a signed Hyperdrive, and generic workers self-assign and run their
+roles.
 - **[phase-5-managed-code](phase-5-managed-code/)** — managed code distribution: a
-  manager seeds role-code into a signed drive; a worker (shipping no business logic)
-  replicates it by the trusted key, pulls a role, and runs it; a client calls the
-  service — proving the worker runs code distributed to it at runtime.
+  manager seeds role-code + a manifest into a signed drive; workers (shipping no
+  business logic) replicate by the trusted key, read the manifest to learn **what
+  they run**, pull their role, and run it; clients call the services — proving the
+  workers run code distributed to them at runtime.
 
 It also demonstrates **both messaging primitives** on the private DHT:
 - **[phase-3-roles-routing](phase-3-roles-routing/)** — request/response (RPC):
@@ -41,7 +43,7 @@ cd phase-5-managed-code && ./capture.sh     # Ctrl-C to stop; writes a session l
 | **[phase-2-rpc](phase-2-rpc/)** | avsc-rpc over the swarm — the AVRO RPC layer (the one spl rides) on a P2P duplex; first cross-peer correlation id. |
 | **[phase-3-roles-routing](phase-3-roles-routing/)** | **RPC (1:1).** Nodes serve named services; clients route by name → topic → peer (multi-peer, no-peer fallback). Folds in the thin leveled observability emitter. |
 | **[phase-4-pubsub-mesh](phase-4-pubsub-mesh/)** | **Pub/sub (1:many).** Every member meshes (server+client); one emits, the others receive — no hub. The contrast to phase-3. |
-| **[phase-5-managed-code](phase-5-managed-code/)** | **Managed code distribution.** A manager seeds role-code into a **signed Hyperdrive**; a generic worker replicates it by the **trusted key**, pulls a role, and runs it (two pathways: in-memory / checkout). Trust = a signed key; the app owns all runtime code. First use of the storage stack. |
+| **[phase-5-managed-code](phase-5-managed-code/)** | **Managed code distribution.** A manager seeds role-code **+ an assignment manifest** into a **signed Hyperdrive**; generic workers replicate by the **trusted key**, read the manifest to **self-assign** ("what runs where"), pull their role, and run it (two pathways: in-memory / checkout). Trust = a signed key; the app owns all runtime code. First use of the storage stack. |
 
 Each phase folder holds a `README.md` (the journey for that step), the runnable
 code + `capture.sh`, a representative scrubbed `session.jsonl`, and any `probes/`

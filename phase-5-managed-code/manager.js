@@ -8,7 +8,7 @@
 // only ever run code this manager authored. The DHT is a discovery rendezvous, not
 // a code source.
 //
-//   bare manager.js <seedHex> <bootstrap host:port|public> <role-name> [--debug]
+//   bare manager.js <seedHex> <bootstrap host:port|public> [--debug]
 const Hyperswarm = require('hyperswarm')
 const DHT = require('hyperdht')
 const Corestore = require('corestore')
@@ -20,9 +20,8 @@ const makeLog = require('./log')
 
 const seedHex = Bare.argv[2] || '00'.repeat(32)
 const bootstrapArg = Bare.argv[3] || 'bootstrap:49737'
-const roleName = Bare.argv[4] || 'echo'
 
-const log = makeLog({ node: 'manager', phase: '5.0' })
+const log = makeLog({ node: 'manager', phase: '5.1' })
 
 const usePublic = bootstrapArg === 'public'
 const bootstrap = usePublic ? undefined : bootstrapArg.split(',').map((s) => {
@@ -37,10 +36,19 @@ async function main () {
   const driveKey = b4a.toString(drive.key, 'hex')
   log.info({ event: 'drive-ready', driveKey, discoveryKey: b4a.toString(drive.discoveryKey, 'hex') }, 'signed drive ready')
 
-  // Seed the role-code from the manager's own filesystem into the drive.
-  const src = fs.readFileSync('./roles/' + roleName + '.js')
-  await drive.put('/roles/' + roleName + '.js', src)
-  log.info({ event: 'seeded', path: '/roles/' + roleName + '.js', bytes: src.length }, `seeded role '${roleName}'`)
+  // Seed every role-file from the manager's own filesystem into the drive.
+  const roleFiles = fs.readdirSync('./roles').filter((f) => f.endsWith('.js'))
+  for (const f of roleFiles) {
+    const src = fs.readFileSync('./roles/' + f)
+    await drive.put('/roles/' + f, src)
+    log.info({ event: 'seeded-role', path: '/roles/' + f, bytes: src.length }, `seeded role '${f.replace('.js', '')}'`)
+  }
+
+  // Seed the assignment manifest — "what runs where". Workers replicate it and
+  // self-assign by name. Edit assignments.json + restart to re-place roles.
+  const manifest = fs.readFileSync('./assignments.json')
+  await drive.put('/assignments.json', manifest)
+  log.info({ event: 'seeded-manifest', path: '/assignments.json', bytes: manifest.length }, 'seeded assignment manifest')
 
   const swarm = usePublic
     ? new Hyperswarm({})

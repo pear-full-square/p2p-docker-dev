@@ -15,7 +15,12 @@
 // (hand to the role's RPC server). The worker dials the manager, so that
 // connection's PeerInfo carries the drive topic; client connections fall to 'else'.
 //
-//   bare worker.js <name> <bootstrap host:port|public> <driveKeyHex> <role> <memory|checkout> [--debug]
+//   bare worker.js <name> <bootstrap host:port|public> <driveKeyHex> <memory|checkout> [--debug]
+//
+// The worker is NOT told its role on the command line — it reads the signed
+// assignment manifest (/assignments.json) off the replicated drive and looks up
+// its own name to learn what to run. "What runs where" is data, distributed in the
+// drive, not configuration baked into the launch.
 const Hyperswarm = require('hyperswarm')
 const DHT = require('hyperdht')
 const Corestore = require('corestore')
@@ -30,10 +35,9 @@ const makeLog = require('./log')
 const name = Bare.argv[2] || 'worker-0'
 const bootstrapArg = Bare.argv[3] || 'bootstrap:49737'
 const driveKeyHex = Bare.argv[4]
-const roleName = Bare.argv[5] || 'echo'
-const execMode = Bare.argv[6] || 'memory'
+const execMode = Bare.argv[5] || 'memory'
 
-const log = makeLog({ node: name, phase: '5.0' })
+const log = makeLog({ node: name, phase: '5.1' })
 
 function topicFor (n) {
   const t = Buffer.alloc(32)
@@ -48,7 +52,7 @@ function runInMemory (src) {
   fn(module, module.exports, require)   // host require: role's deps are the worker's (owned, build-time)
   return module.exports
 }
-function runFromCheckout (src) {
+function runFromCheckout (src, roleName) {
   const dir = '/tmp/checkout'
   fs.mkdirSync(dir, { recursive: true })
   const path = dir + '/' + roleName + '.js'
@@ -95,23 +99,35 @@ async function main () {
   await drive.update()
   done()
 
-  // PULL the role source over the replicated drive.
-  const src = await drive.get('/roles/' + roleName + '.js', { wait: true })
-  if (!src) { log.error({ event: 'fatal', err: 'role not found on drive: ' + roleName }); Bare.exit(1) }
-  log.info({ event: 'role-pulled', role: roleName, bytes: src.length, exec: execMode }, `pulled role '${roleName}'`)
+  // SELF-ASSIGN: read the signed manifest and look up this worker's role.
+  const manifestBuf = await drive.get('/assignments.json', { wait: true })
+  if (!manifestBuf) { log.error({ event: 'fatal', err: 'no assignment manifest on drive' }); Bare.exit(1) }
+  const manifest = JSON.parse(b4a.toString(manifestBuf))
+  const roleName = manifest[name]
+  if (!roleName) {
+    // No-role fallback — the manifest doesn't place anything here. Stay up, idle.
+    log.warn({ event: 'no-assignment', worker: name }, `no role assigned to '${name}' — idling`)
+  } else {
+    log.info({ event: 'assigned', worker: name, role: roleName }, `manifest assigns '${roleName}' to '${name}'`)
 
-  // RUN it via the configured pathway.
-  const roleModule = execMode === 'checkout' ? runFromCheckout(b4a.toString(src)) : runInMemory(b4a.toString(src))
-  log.info({ event: 'role-loaded', role: roleName, exec: execMode }, `loaded role via ${execMode}`)
+    // PULL the assigned role source over the replicated drive.
+    const src = await drive.get('/roles/' + roleName + '.js', { wait: true })
+    if (!src) { log.error({ event: 'fatal', err: 'assigned role not found on drive: ' + roleName }); Bare.exit(1) }
+    log.info({ event: 'role-pulled', role: roleName, bytes: src.length, exec: execMode }, `pulled role '${roleName}'`)
 
-  roleModule.start({
-    swarm,
-    name,
-    log,
-    Service,
-    topicFor,
-    onServicePeer: (handler) => { onServicePeer = handler }
-  })
+    // RUN it via the configured pathway.
+    const roleModule = execMode === 'checkout' ? runFromCheckout(b4a.toString(src), roleName) : runInMemory(b4a.toString(src))
+    log.info({ event: 'role-loaded', role: roleName, exec: execMode }, `loaded role via ${execMode}`)
+
+    roleModule.start({
+      swarm,
+      name,
+      log,
+      Service,
+      topicFor,
+      onServicePeer: (handler) => { onServicePeer = handler }
+    })
+  }
 
   const sigterm = new Signal('SIGTERM')
   sigterm.on('signal', async () => { log.info({ event: 'stop' }); await swarm.destroy(); Bare.exit(0) })

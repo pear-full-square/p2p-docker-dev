@@ -1,0 +1,6 @@
+{
+  "_comment": "What runs where. The manager seeds this into the signed drive at /assignments.json; each worker replicates it and looks up its own name to learn which role to pull + run. Edit + re-seed to re-place responsibilities. One role per worker in 5.1 (multi-role-per-worker needs per-role connection routing — deferred). echo is placed on two workers to show many-workers-one-role.",
+  "worker-a": "echo",
+  "worker-b": "reverse",
+  "worker-c": "echo"
+}

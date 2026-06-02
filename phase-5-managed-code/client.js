@@ -15,7 +15,7 @@ const name = Bare.argv[2] || 'client-0'
 const bootstrapArg = Bare.argv[3] || 'bootstrap:49737'
 const serviceName = Bare.argv[4] || 'echo'
 
-const log = makeLog({ node: name, phase: '5.0' })
+const log = makeLog({ node: name, phase: '5.1' })
 
 const svc = Service.forProtocol({
   protocol: 'Call',

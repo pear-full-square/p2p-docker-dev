@@ -1,31 +1,46 @@
 # Phase 5 — managed code distribution & responsibilities
 
-*Goal: the cluster becomes **managed**. A manager seeds role-code into a **signed
-Hyperdrive**; a generic worker — shipping no business logic — replicates the drive
-by the **key it trusts**, pulls a role, and **runs it**. A client then calls the
-service, proving the worker is running code distributed to it at runtime. This is
-where the roadmap invariant becomes real: **the application owns all runtime code,
-trust = a signed key.***
+*Goal: the cluster becomes **managed**. A manager seeds role-code AND an assignment
+manifest into a **signed Hyperdrive**; generic workers — shipping no business logic
+— replicate by the **key they trust**, read the manifest to learn **what they run**,
+pull their role, and **run it**. Clients call the services, proving the workers run
+code distributed to them at runtime. This is where the roadmap invariant becomes
+real: **the application owns all runtime code, trust = a signed key.***
 
-## What it does
+## What it does (5.1)
 
-A bootstrap + a **manager** + a generic **worker** + a **client**:
+A bootstrap + a **manager** + three generic **workers** + two **clients**:
 
 1. **manager** derives a Hyperdrive from `CLUSTER_SEED` (the app's signing secret),
-   seeds `roles/echo.js` into it, and serves the drive on the private DHT. The
-   drive's key is logged — it equals the `DRIVE_KEY` in `.env`.
-2. **worker** is configured with `DRIVE_KEY` only (never the seed). It replicates
-   the drive read-only, **pulls** `/roles/echo.js`, and **runs** it — picking up a
-   responsibility from code it did not ship with.
-3. the pulled **role** stands up the same `avsc-rpc` echo service phase-3 served —
-   but as *distributed* code.
-4. **client** calls `echo` and logs `echo@worker-a: ping #N`. A response is proof
-   the managed code is live (see `session.jsonl`: `role-pulled` → `role-loaded` →
-   `role-serving`, then 11 `rpc-call`/`rpc-serve`/`rpc-response` triples).
+   seeds every `roles/*.js` (`echo`, `reverse`) **and `assignments.json`** into it,
+   and serves the drive on the private DHT. The drive key is logged — it equals
+   `DRIVE_KEY` in `.env`.
+2. each **worker** is configured with `DRIVE_KEY` only (never the seed) — and *not*
+   told its role. It replicates the drive read-only, reads the **manifest**, looks
+   up its own name to **self-assign** a role, pulls that role's source, and **runs
+   it**. (No-role fallback: a worker absent from the manifest stays up and idles.)
+3. the pulled **role** stands up an `avsc-rpc` service (the same shape phase-3
+   served) — but as *distributed* code.
+4. **clients** call their service and log e.g. `echo@worker-a: ping #N` /
+   `reverse@worker-b: 5# gnip`. A response is proof the managed code is live.
+
+The manifest places `echo` on **worker-a + worker-c** and `reverse` on **worker-b**
+— so `session.jsonl` shows `client-echo` connecting to *both* echo workers
+(many-workers-one-role) while `reverse` runs on its own.
 
 ```
 cd phase-5-managed-code && ./capture.sh     # Ctrl-C to stop; writes a session log
 ```
+
+## "What runs where" is data (the manifest)
+
+`assignments.json` (`{ "worker-a": "echo", "worker-b": "reverse", "worker-c":
+"echo" }`) is seeded into the signed drive at `/assignments.json`. Placement is
+**data, distributed in the drive** — not configuration baked into each worker's
+launch. Edit the manifest + re-seed to re-place responsibilities. Because it rides
+the signed drive, the manifest carries the same trust as the code. (Live
+re-assignment — the manager changing the manifest and workers re-picking-up without
+a restart — is a later iteration; 5.1 reads it once at startup.)
 
 ## Trust = a signed key (intrinsic, not bolted on)
 
@@ -75,12 +90,19 @@ connections fall to the service branch.
   that misses won't re-query on its own for a while, so the client **refreshes its
   discovery** each interval until a provider is found.
 
-## Scope of 5.0 / what's next
+## Scope / what's next
 
-5.0 proves the core mechanic: one manager, one role, one worker, one client. Honest
-scope: the role physically ships in the shared image too, but the worker's code path
-*only ever obtains it by replication* — proving the distribution path. The
-**data-driven assignment manifest** ("what runs where", multiple roles, multiple
-workers self-assigning) is 5.1; the fuller managed capstone is 5.2. True
-drive-as-module-root resolution (the deep Pear-loader path) stays deferred. Image
-tag: `5.0`.
+- **5.0** proved the core mechanic: a manager seeds a signed drive, one worker pulls
+  + runs one role, a client proves it live.
+- **5.1** *(this)* makes placement **data-driven**: multiple roles, multiple workers
+  self-assigning from the signed manifest, including a shared role.
+
+Honest scope: roles + manifest physically ship in the shared image too, but each
+worker's code path *only ever obtains them by replication* — proving the
+distribution path. **One role per worker** here: a single worker serving *multiple*
+service topics on one swarm reintroduces the connection-routing ambiguity (incoming
+client connections don't carry the topic), so multi-role-per-worker is deferred (it
+needs per-role connection routing — e.g. a swarm per role). **Live re-assignment**
+(manager edits the manifest → workers re-pick-up without restart) and true
+drive-as-module-root resolution (the deep Pear-loader path) also stay deferred.
+Image tag: `5.1`.
