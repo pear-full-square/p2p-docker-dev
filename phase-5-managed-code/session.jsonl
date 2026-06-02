@@ -1,0 +1,47 @@
+{"ts":"2026-06-02T05:36:38.233Z","source":"app","level":30,"time":1780378598206,"node":"worker-a","phase":"5.0","event":"trust-key","driveKey":"************************************************************2ee3","msg":"configured to trust drive key"}
+{"ts":"2026-06-02T05:36:38.236Z","source":"app","level":30,"time":1780378598219,"node":"worker-a","phase":"5.0","event":"replicating-from","remote":"************7669"}
+{"ts":"2026-06-02T05:36:38.237Z","source":"app","level":30,"time":1780378597688,"node":"bootstrap","phase":"5.0","event":"start","port":49737,"host":"172.x.x.x"}
+{"ts":"2026-06-02T05:36:38.238Z","source":"app","level":30,"time":1780378597692,"node":"bootstrap","phase":"5.0","event":"bootstrap-ready","port":49737,"host":"172.x.x.x"}
+{"ts":"2026-06-02T05:36:38.239Z","source":"app","level":30,"time":1780378598204,"node":"client-a","phase":"5.0","event":"route","service":"echo","topic":"************b55e","msg":"routing to 'echo'"}
+{"ts":"2026-06-02T05:36:38.240Z","source":"app","level":30,"time":1780378598074,"node":"manager","phase":"5.0","event":"drive-ready","driveKey":"************************************************************2ee3","discoveryKey":"************************************************************9f24","msg":"signed drive ready"}
+{"ts":"2026-06-02T05:36:38.241Z","source":"app","level":30,"time":1780378598083,"node":"manager","phase":"5.0","event":"seeded","path":"/roles/echo.js","bytes":1540,"msg":"seeded role 'echo'"}
+{"ts":"2026-06-02T05:36:38.243Z","source":"app","level":30,"time":1780378598085,"node":"manager","phase":"5.0","event":"serving-drive","driveKey":"************************************************************2ee3","msg":"serving signed drive on the DHT"}
+{"ts":"2026-06-02T05:36:38.244Z","source":"app","level":30,"time":1780378598216,"node":"manager","phase":"5.0","event":"peer-replicating","remote":"************d6b9"}
+{"ts":"2026-06-02T05:36:38.245Z","source":"app","level":30,"time":1780378598243,"node":"worker-a","phase":"5.0","event":"role-pulled","role":"echo","bytes":1540,"exec":"memory","msg":"pulled role 'echo'"}
+{"ts":"2026-06-02T05:36:38.246Z","source":"app","level":30,"time":1780378598243,"node":"worker-a","phase":"5.0","event":"role-loaded","role":"echo","exec":"memory","msg":"loaded role via memory"}
+{"ts":"2026-06-02T05:36:38.247Z","source":"app","level":30,"time":1780378598244,"node":"worker-a","phase":"5.0","event":"role-serving","role":"echo","topic":"************b55e","msg":"role 'echo' serving"}
+{"ts":"2026-06-02T05:36:41.227Z","source":"app","level":30,"time":1780378601225,"node":"worker-a","phase":"5.0","event":"service-peer","remote":"************e6c1"}
+{"ts":"2026-06-02T05:36:41.229Z","source":"app","level":30,"time":1780378601228,"node":"client-a","phase":"5.0","event":"peer-connected","remote":"************d6b9","msg":"connected to 'echo' provider"}
+{"ts":"2026-06-02T05:36:44.218Z","source":"app","level":30,"time":1780378604216,"node":"client-a","phase":"5.0","event":"rpc-call","cid":"client-a-0","msg":"calling 'echo'"}
+{"ts":"2026-06-02T05:36:44.221Z","source":"app","level":30,"time":1780378604218,"node":"worker-a","phase":"5.0","event":"rpc-serve","service":"echo","cid":"client-a-0","msg":"echo handled 'client-a-0'"}
+{"ts":"2026-06-02T05:36:44.222Z","source":"app","level":30,"time":1780378604220,"node":"client-a","phase":"5.0","event":"rpc-response","cid":"client-a-0","res":"echo@worker-a: ping #0","msg":"got response from managed code"}
+{"ts":"2026-06-02T05:36:47.221Z","source":"app","level":30,"time":1780378607218,"node":"client-a","phase":"5.0","event":"rpc-call","cid":"client-a-1","msg":"calling 'echo'"}
+{"ts":"2026-06-02T05:36:47.222Z","source":"app","level":30,"time":1780378607219,"node":"worker-a","phase":"5.0","event":"rpc-serve","service":"echo","cid":"client-a-1","msg":"echo handled 'client-a-1'"}
+{"ts":"2026-06-02T05:36:47.223Z","source":"app","level":30,"time":1780378607220,"node":"client-a","phase":"5.0","event":"rpc-response","cid":"client-a-1","res":"echo@worker-a: ping #1","msg":"got response from managed code"}
+{"ts":"2026-06-02T05:36:50.227Z","source":"app","level":30,"time":1780378610225,"node":"client-a","phase":"5.0","event":"rpc-call","cid":"client-a-2","msg":"calling 'echo'"}
+{"ts":"2026-06-02T05:36:50.237Z","source":"app","level":30,"time":1780378610225,"node":"worker-a","phase":"5.0","event":"rpc-serve","service":"echo","cid":"client-a-2","msg":"echo handled 'client-a-2'"}
+{"ts":"2026-06-02T05:36:50.238Z","source":"app","level":30,"time":1780378610226,"node":"client-a","phase":"5.0","event":"rpc-response","cid":"client-a-2","res":"echo@worker-a: ping #2","msg":"got response from managed code"}
+{"ts":"2026-06-02T05:36:53.230Z","source":"app","level":30,"time":1780378613226,"node":"client-a","phase":"5.0","event":"rpc-call","cid":"client-a-3","msg":"calling 'echo'"}
+{"ts":"2026-06-02T05:36:53.234Z","source":"app","level":30,"time":1780378613227,"node":"worker-a","phase":"5.0","event":"rpc-serve","service":"echo","cid":"client-a-3","msg":"echo handled 'client-a-3'"}
+{"ts":"2026-06-02T05:36:53.237Z","source":"app","level":30,"time":1780378613228,"node":"client-a","phase":"5.0","event":"rpc-response","cid":"client-a-3","res":"echo@worker-a: ping #3","msg":"got response from managed code"}
+{"ts":"2026-06-02T05:36:56.235Z","source":"app","level":30,"time":1780378616232,"node":"client-a","phase":"5.0","event":"rpc-call","cid":"client-a-4","msg":"calling 'echo'"}
+{"ts":"2026-06-02T05:36:56.236Z","source":"app","level":30,"time":1780378616233,"node":"worker-a","phase":"5.0","event":"rpc-serve","service":"echo","cid":"client-a-4","msg":"echo handled 'client-a-4'"}
+{"ts":"2026-06-02T05:36:56.238Z","source":"app","level":30,"time":1780378616234,"node":"client-a","phase":"5.0","event":"rpc-response","cid":"client-a-4","res":"echo@worker-a: ping #4","msg":"got response from managed code"}
+{"ts":"2026-06-02T05:36:59.237Z","source":"app","level":30,"time":1780378619233,"node":"client-a","phase":"5.0","event":"rpc-call","cid":"client-a-5","msg":"calling 'echo'"}
+{"ts":"2026-06-02T05:36:59.239Z","source":"app","level":30,"time":1780378619235,"node":"worker-a","phase":"5.0","event":"rpc-serve","service":"echo","cid":"client-a-5","msg":"echo handled 'client-a-5'"}
+{"ts":"2026-06-02T05:36:59.241Z","source":"app","level":30,"time":1780378619235,"node":"client-a","phase":"5.0","event":"rpc-response","cid":"client-a-5","res":"echo@worker-a: ping #5","msg":"got response from managed code"}
+{"ts":"2026-06-02T05:37:02.240Z","source":"app","level":30,"time":1780378622236,"node":"client-a","phase":"5.0","event":"rpc-call","cid":"client-a-6","msg":"calling 'echo'"}
+{"ts":"2026-06-02T05:37:02.241Z","source":"app","level":30,"time":1780378622237,"node":"worker-a","phase":"5.0","event":"rpc-serve","service":"echo","cid":"client-a-6","msg":"echo handled 'client-a-6'"}
+{"ts":"2026-06-02T05:37:02.243Z","source":"app","level":30,"time":1780378622238,"node":"client-a","phase":"5.0","event":"rpc-response","cid":"client-a-6","res":"echo@worker-a: ping #6","msg":"got response from managed code"}
+{"ts":"2026-06-02T05:37:05.240Z","source":"app","level":30,"time":1780378625237,"node":"client-a","phase":"5.0","event":"rpc-call","cid":"client-a-7","msg":"calling 'echo'"}
+{"ts":"2026-06-02T05:37:05.243Z","source":"app","level":30,"time":1780378625238,"node":"worker-a","phase":"5.0","event":"rpc-serve","service":"echo","cid":"client-a-7","msg":"echo handled 'client-a-7'"}
+{"ts":"2026-06-02T05:37:05.244Z","source":"app","level":30,"time":1780378625239,"node":"client-a","phase":"5.0","event":"rpc-response","cid":"client-a-7","res":"echo@worker-a: ping #7","msg":"got response from managed code"}
+{"ts":"2026-06-02T05:37:08.240Z","source":"app","level":30,"time":1780378628238,"node":"client-a","phase":"5.0","event":"rpc-call","cid":"client-a-8","msg":"calling 'echo'"}
+{"ts":"2026-06-02T05:37:08.242Z","source":"app","level":30,"time":1780378628239,"node":"worker-a","phase":"5.0","event":"rpc-serve","service":"echo","cid":"client-a-8","msg":"echo handled 'client-a-8'"}
+{"ts":"2026-06-02T05:37:08.243Z","source":"app","level":30,"time":1780378628239,"node":"client-a","phase":"5.0","event":"rpc-response","cid":"client-a-8","res":"echo@worker-a: ping #8","msg":"got response from managed code"}
+{"ts":"2026-06-02T05:37:11.245Z","source":"app","level":30,"time":1780378631242,"node":"client-a","phase":"5.0","event":"rpc-call","cid":"client-a-9","msg":"calling 'echo'"}
+{"ts":"2026-06-02T05:37:11.247Z","source":"app","level":30,"time":1780378631244,"node":"worker-a","phase":"5.0","event":"rpc-serve","service":"echo","cid":"client-a-9","msg":"echo handled 'client-a-9'"}
+{"ts":"2026-06-02T05:37:11.249Z","source":"app","level":30,"time":1780378631244,"node":"client-a","phase":"5.0","event":"rpc-response","cid":"client-a-9","res":"echo@worker-a: ping #9","msg":"got response from managed code"}
+{"ts":"2026-06-02T05:37:14.246Z","source":"app","level":30,"time":1780378634243,"node":"client-a","phase":"5.0","event":"rpc-call","cid":"client-a-10","msg":"calling 'echo'"}
+{"ts":"2026-06-02T05:37:14.248Z","source":"app","level":30,"time":1780378634244,"node":"worker-a","phase":"5.0","event":"rpc-serve","service":"echo","cid":"client-a-10","msg":"echo handled 'client-a-10'"}
+{"ts":"2026-06-02T05:37:14.249Z","source":"app","level":30,"time":1780378634245,"node":"client-a","phase":"5.0","event":"rpc-response","cid":"client-a-10","res":"echo@worker-a: ping #10","msg":"got response from managed code"}

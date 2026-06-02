@@ -1,0 +1,47 @@
+# Phase 5 — managed code distribution. A private DHT bootstrap + a MANAGER that
+# seeds role-code into a signed Hyperdrive + a generic WORKER that pulls and runs
+# the role + a CLIENT that calls it (proving the worker runs distributed code).
+#
+# Trust anchor: the manager derives its drive from CLUSTER_SEED; the worker is
+# configured with the public DRIVE_KEY only. Network/seed config is parameterised
+# via .env (see .env.example; capture.sh creates it).
+
+x-node: &node
+  build: .
+  image: p2p-docker-dev:5.0
+  init: true
+  restart: "no"
+  networks: [cluster]
+
+services:
+  bootstrap:
+    <<: *node
+    container_name: bootstrap
+    command: ["bootstrap.js", "${BOOTSTRAP_PORT}", "${BOOTSTRAP_IP}"]
+    networks:
+      cluster:
+        ipv4_address: ${BOOTSTRAP_IP}
+
+  manager:
+    <<: *node
+    container_name: manager
+    command: ["manager.js", "${CLUSTER_SEED}", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "${ROLE}"]
+    depends_on: [bootstrap]
+
+  worker:
+    <<: *node
+    container_name: worker
+    command: ["worker.js", "worker-a", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "${DRIVE_KEY}", "${ROLE}", "${EXEC}"]
+    depends_on: [bootstrap, manager]
+
+  client:
+    <<: *node
+    container_name: client
+    command: ["client.js", "client-a", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "${ROLE}"]
+    depends_on: [bootstrap, worker]
+
+networks:
+  cluster:
+    ipam:
+      config:
+        - subnet: ${CLUSTER_SUBNET}

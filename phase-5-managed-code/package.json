@@ -1,0 +1,21 @@
+{
+  "name": "p2p-docker-dev-managed-code",
+  "private": true,
+  "comment": "Phase 5 combines the swarm stack (hyperswarm/hyperdht), the AVRO RPC layer (avsc + avsc-rpc git-cloned in the Dockerfile; their registry sibling deps listed here), and the storage stack (corestore/hyperdrive/b4a — first-party Pear-native, registry-installed, no fork). Versions for the storage stack pinned to what probes/hyperdrive-replicate-under-bare confirmed.",
+  "dependencies": {
+    "hyperswarm": "^4.17.0",
+    "hyperdht": "^6.32.0",
+    "sodium-native": "^5.1.0",
+    "bare-signals": "^4.2.0",
+    "corestore": "7.10.0",
+    "hyperdrive": "13.3.2",
+    "b4a": "1.8.1",
+    "bare-fs": "^4.7.0",
+    "streamx": "^2.26.0",
+    "bare-buffer": "^3.6.0",
+    "bare-events": "^2.8.2",
+    "bare-stream": "^2.13.0",
+    "bare-crypto": "^1.13.4",
+    "bare-path": "^3.0.0"
+  }
+}

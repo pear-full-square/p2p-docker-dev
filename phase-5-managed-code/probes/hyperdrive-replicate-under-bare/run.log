@@ -1,0 +1,29 @@
+# hyperdrive-replicate-under-bare — run 2026-06-02T04:48:58Z
+
+## build
+#19 exporting layers 0.4s done
+#19 writing image sha256:************************************************************4f4b done
+#19 naming to docker.io/library/hyperdrive-replicate-under-bare-probe 0.0s done
+#19 DONE 0.4s
+
+## load + versions (probe.js)
+{"ok":true,"loaded":{"corestore":"function","hyperdrive":"function","b4a":"function"},"versions":{"corestore":"7.10.0","hyperdrive":"13.3.2","b4a":"?"}}
+
+## api surface (api.js)
+{"corestore":["replicate","get","namespace","ready","close"]}
+{"hyperdrive":["ready","put","get","update","findingPeers","entry","list","close"]}
+{"props":{"key":true,"discoveryKey":true}}
+
+## replicate by key + read (replicate.js)
+{"step":"writer-ready","driveKey":"************************************************************3007"}
+{"step":"seeded","path":"/roles/echo.js","bytes":66}
+{"step":"reader-read","match":true,"pulledBytes":66}
+
+## execute pulled code — both pathways (exec.js)
+{"step":"in-memory-loaded","hasStart":true}
+{"pathway":"in-memory","run":"role started via new Function"}
+{"step":"checkout-loaded","hasStart":true}
+{"pathway":"checkout","run":"role started via require(file)"}
+
+## image size
+335MB

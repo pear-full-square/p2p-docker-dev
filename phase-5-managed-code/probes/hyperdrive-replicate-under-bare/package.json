@@ -1,0 +1,11 @@
+{
+  "name": "hyperdrive-replicate-under-bare-probe",
+  "private": true,
+  "comment": "The Holepunch storage stack (corestore/hyperdrive) is first-party Pear-native, so — unlike the avsc forks — it installs from the registry and runs under Bare with no barification. Versions pinned to what the probe confirmed.",
+  "dependencies": {
+    "corestore": "7.10.0",
+    "hyperdrive": "13.3.2",
+    "b4a": "1.8.1",
+    "bare-fs": "4.7.1"
+  }
+}
