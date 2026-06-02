@@ -1,0 +1,15 @@
+# isomorphic-git-under-bare — run 2026-06-02T17:05:30Z
+
+## build
+#17 exporting layers 0.1s done
+#17 writing image sha256:************************************************************8be9 done
+#17 naming to docker.io/library/isomorphic-git-under-bare-probe 0.0s done
+#17 DONE 0.2s
+
+## version
+
+## local git flow under Bare (init / add / commit x2 / log / checkout-reconstruct)
+{"init":true,"commit1":"********5632","commit2":"********d70d","logCount":2,"logMsgs":["second commit","first commit"],"parentLink":"********5632","reconstructedFromGit":true}
+
+## image size
+129MB

@@ -1,0 +1,9 @@
+{
+  "name": "isomorphic-git-under-bare-probe",
+  "private": true,
+  "comment": "isomorphic-git is pure-JS (pako/sha.js/diff3 — no native addons), so it installs from the registry and — unlike avsc — needs NO fork. The only wrinkle: its CJS/'node' build hard-requires node 'crypto'; Bare lacks it, so we use the ESM build (index.js), which falls back to pure-JS sha.js.",
+  "dependencies": {
+    "isomorphic-git": "*",
+    "bare-fs": "*"
+  }
+}
