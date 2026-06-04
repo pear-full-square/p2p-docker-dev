@@ -1,0 +1,42 @@
+# hyperdrive-fuse-readonly — run 2026-06-04T13:01:00Z
+
+## build
+#16 exporting layers 0.1s done
+#16 writing image sha256:************************************************************9b1c done
+#16 naming to docker.io/library/hyperdrive-fuse-readonly-probe 0.0s done
+#16 DONE 0.1s
+
+## read-only FUSE mount over Hyperdrive v11
+seeded: 4 files in 3 directories
+mounted at /tmp/fuse-mnt
+readdir /: [ 'bin', 'docs', 'hello.txt' ]
+readdir /docs: [ 'design.md', 'readme.md' ]
+read /hello.txt: "hello from the swarm\n"
+read /docs/readme.md: "# Mycelium\n\nThe data fabric.\n"
+stat /hello.txt: file=true size=21
+stat /docs: dir=true
+write rejected: EROFS
+unmounted
+{
+  "summary": {
+    "pass": true,
+    "rootEntries": [
+      "bin",
+      "docs",
+      "hello.txt"
+    ],
+    "docsEntries": [
+      "design.md",
+      "readme.md"
+    ],
+    "helloContent": "hello from the swarm\n",
+    "readmeContent": "# Mycelium\n\nThe data fabric.\n",
+    "helloIsFile": true,
+    "helloSize": 21,
+    "docsIsDir": true,
+    "writeRejected": true
+  }
+}
+
+## image size
+454MB

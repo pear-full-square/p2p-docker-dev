@@ -1,0 +1,11 @@
+{
+  "name": "hyperdrive-fuse-readonly-probe",
+  "private": true,
+  "comment": "Read-only FUSE mount over Hyperdrive v11. The drive is a window into the swarm, not a writable surface. Writes go through the fabric, not the filesystem.",
+  "dependencies": {
+    "fuse-native": "*",
+    "corestore": "7.10.0",
+    "hyperdrive": "13.3.2",
+    "b4a": "1.8.1"
+  }
+}
