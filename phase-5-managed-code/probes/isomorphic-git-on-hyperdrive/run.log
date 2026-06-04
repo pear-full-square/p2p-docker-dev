@@ -1,0 +1,63 @@
+# isomorphic-git-on-hyperdrive — run 2026-06-04T06:14:01Z
+
+## build
+#19 exporting layers 0.1s done
+#19 writing image sha256:************************************************************4372 done
+#19 naming to docker.io/library/isomorphic-git-on-hyperdrive-probe 0.0s done
+#19 DONE 0.1s
+
+## git on Hyperdrive vs bare-fs (porcelain + plumbing)
+{
+  "test": "porcelain",
+  "barefs": {
+    "label": "bare-fs",
+    "sha1": "********0505",
+    "sha2": "********ca85",
+    "logCount": 2,
+    "msgs": [
+      "second commit",
+      "first commit"
+    ],
+    "parent": "********0505",
+    "blobContent": "hello mycelium\nsecond line\n"
+  },
+  "hyperdrive": {
+    "label": "hyperdrive",
+    "sha1": "********0505",
+    "sha2": "********ca85",
+    "logCount": 2,
+    "msgs": [
+      "second commit",
+      "first commit"
+    ],
+    "parent": "********0505",
+    "blobContent": "hello mycelium\nsecond line\n"
+  },
+  "hashesMatch": true
+}
+{
+  "test": "plumbing",
+  "barefs": {
+    "label": "bare-fs-plumbing",
+    "commitOid": "********5bea",
+    "treeOid": "********20bf",
+    "blobOid": "********8b06",
+    "treePath": "test.txt",
+    "blobContent": "plumbing test\n",
+    "message": "plumbing commit"
+  },
+  "hyperdrive": {
+    "label": "hyperdrive-plumbing",
+    "commitOid": "********5bea",
+    "treeOid": "********20bf",
+    "blobOid": "********8b06",
+    "treePath": "test.txt",
+    "blobContent": "plumbing test\n",
+    "message": "plumbing commit"
+  },
+  "hashesMatch": true
+}
+{"summary":{"porcelainHashesMatch":true,"plumbingHashesMatch":true,"adapterWorks":true}}
+
+## image size
+342MB

@@ -1,0 +1,12 @@
+{
+  "name": "isomorphic-git-on-hyperdrive-probe",
+  "private": true,
+  "comment": "isomorphic-git running over Hyperdrive storage via the hyperdrive-fs adapter. Proves git operations produce identical objects on Hyperdrive as on bare-fs.",
+  "dependencies": {
+    "isomorphic-git": "*",
+    "corestore": "7.10.0",
+    "hyperdrive": "13.3.2",
+    "bare-fs": "4.7.1",
+    "b4a": "1.8.1"
+  }
+}
