@@ -8,11 +8,11 @@
  */
 
 class Stats {
-  constructor (entry) {
+  constructor (entry, implicitDir) {
     this._entry = entry
     this._isFile = entry && entry.value && entry.value.blob != null
     this._isSymlink = entry && entry.value && entry.value.linkname != null
-    this._isDir = entry != null && !this._isFile && !this._isSymlink
+    this._isDir = implicitDir || (entry != null && !this._isFile && !this._isSymlink)
   }
 
   isFile () { return this._isFile }
@@ -86,7 +86,7 @@ export function createFs (drive) {
           break
         }
         if (entries.length > 0) {
-          return new Stats(null)
+          return new Stats(null, true)
         }
         throw enoent(path)
       }
@@ -102,7 +102,7 @@ export function createFs (drive) {
           break
         }
         if (entries.length > 0) {
-          return new Stats(null)
+          return new Stats(null, true)
         }
         throw enoent(path)
       }
