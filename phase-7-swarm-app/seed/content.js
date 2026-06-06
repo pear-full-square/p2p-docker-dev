@@ -1,11 +1,9 @@
 // Drive content — seeded on first run. Apps are self-contained scripts that
 // run directly: ./apps/hello.js (shebang → ../bin/bare).
 // When run via the API, they're loaded with require() and called with a ctx.
+// The bare binary is NOT on the drive — it's in the container image and
+// overlaid onto the FUSE mount by the mount layer.
 var b4a = require('b4a')
-var fs = require('fs')
-var path = require('path')
-
-var BARE_BIN = '/usr/local/lib/node_modules/bare/node_modules/bare-runtime-linux-x64/bin/bare'
 
 var README = 'SPLectrum swarm — the P2P software distribution drive.\n'
 
@@ -45,7 +43,7 @@ var APPS = {
     '  }',
     '};',
     'module.exports = app;',
-    'if (!module.parent) {',
+    'if (typeof __filename !== "undefined") {',
     '  var name = typeof Bare !== "undefined" ? "bare-host" : "node-host";',
     '  var exit = typeof Bare !== "undefined" ? Bare.exit : process.exit;',
     '  var r = app.run({ nodeName: name, emit: function (e, d) { console.log(JSON.stringify(d)); } });',
@@ -116,14 +114,6 @@ async function seedContent (drive, emitFn) {
     emit('seeded', { path: p, bytes: APPS[p].length })
   }
 
-  // Seed the bare binary so the drive is self-contained
-  try {
-    var bareBuf = fs.readFileSync(BARE_BIN)
-    await drive.put('/bin/bare', bareBuf)
-    emit('seeded', { path: '/bin/bare', bytes: bareBuf.length })
-  } catch (e) {
-    emit('seed-warning', { path: '/bin/bare', error: String(e.message || e) })
-  }
 }
 
 module.exports = { seedContent: seedContent }

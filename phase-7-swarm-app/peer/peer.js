@@ -1,8 +1,8 @@
 // Peer node — joins the swarm, replicates the drive, serves a browser UI.
 //
-// Runs under bare or node.js. Under node: also mounts FUSE if FUSE_MOUNT is set.
+// Two drives: the content drive (replicated from seed, read-only) and the
+// world view drive (personal, writable, captures what this node knows).
 //
-//   bare peer.js <bootstrapAddr> <driveKeyHex> [--http <port>] [--url <externalUrl>] [--seed-url <seedUrl>] [--name <peerName>]
 //   node peer.js <bootstrapAddr> <driveKeyHex> [--http <port>] [--url <externalUrl>] [--seed-url <seedUrl>] [--name <peerName>]
 const DHT = require('hyperdht')
 const Hyperswarm = require('hyperswarm')
@@ -10,6 +10,7 @@ const Corestore = require('corestore')
 const Hyperdrive = require('hyperdrive')
 const b4a = require('b4a')
 const { startServer } = require('../ui/http')
+const { createWorldView } = require('../ui/worldview')
 const rt = require('../ui/runtime')
 
 const bootstrapArg = rt.argv[2] || '172.28.0.10:49737'
@@ -44,9 +45,16 @@ async function main () {
   const driveKey = b4a.from(driveKeyHex, 'hex')
 
   const store = new Corestore(STORE_PATH)
+
+  // Content drive — replicated from seed, read-only
   const drive = new Hyperdrive(store, driveKey)
   await drive.ready()
   emit('drive-created', { key: driveKeyHex })
+
+  // World view drive — personal, writable (separate namespace)
+  const worldDrive = new Hyperdrive(store.namespace('world'))
+  await worldDrive.ready()
+  emit('world-drive-ready', { key: b4a.toString(worldDrive.key, 'hex') })
 
   const swarm = new Hyperswarm({
     dht: new DHT({ bootstrap, firewalled: false })
@@ -75,27 +83,40 @@ async function main () {
   }
   emit('drive-contents', { files: entries })
 
-  for (const path of entries) {
-    const buf = await drive.get(path)
-    if (buf) {
-      emit('file-read', { path, bytes: buf.length, content: b4a.toString(buf).slice(0, 200) })
-    }
-  }
+  // Start world view — periodic status updates
+  var worldView = createWorldView(worldDrive, swarm, { node: peerName, role: 'peer' })
+  worldView.start()
+  emit('world-view-started')
 
   if (httpPort) {
-    startServer(drive, swarm, { port: httpPort, node: peerName, url: externalUrl })
+    startServer(drive, swarm, {
+      port: httpPort, node: peerName, url: externalUrl,
+      worldView: worldView
+    })
   }
 
-  // FUSE mount (node.js only)
-  var fuseHandle = null
+  // FUSE mounts (node.js only)
+  var fuseHandles = []
   var fuseMod = rt.tryFuse()
   if (fuseMod) {
-    try {
-      var mountPoint = process.env.FUSE_MOUNT
-      fuseHandle = await fuseMod.mountDrive(drive, mountPoint)
-      emit('fuse-mounted', { mountPoint })
-    } catch (e) {
-      emit('fuse-failed', { error: String(e.message || e) })
+    var fuseMountContent = process.env.FUSE_MOUNT
+    var bareOverlay = { '/bin/bare': '/usr/local/lib/node_modules/bare/node_modules/bare-runtime-linux-x64/bin/bare' }
+    if (fuseMountContent) {
+      try {
+        fuseHandles.push(await fuseMod.mountDrive(drive, fuseMountContent, { overlays: bareOverlay }))
+        emit('fuse-mounted', { mountPoint: fuseMountContent, drive: 'content' })
+      } catch (e) {
+        emit('fuse-failed', { mountPoint: fuseMountContent, error: String(e.message || e) })
+      }
+    }
+    var fuseMountWorld = process.env.FUSE_WORLD_MOUNT
+    if (fuseMountWorld) {
+      try {
+        fuseHandles.push(await fuseMod.mountDrive(worldDrive, fuseMountWorld))
+        emit('fuse-mounted', { mountPoint: fuseMountWorld, drive: 'world' })
+      } catch (e) {
+        emit('fuse-failed', { mountPoint: fuseMountWorld, error: String(e.message || e) })
+      }
     }
   }
 
@@ -107,7 +128,10 @@ async function main () {
 
   rt.onShutdown(async () => {
     emit('stopping')
-    if (fuseHandle) await fuseMod.unmount(fuseHandle)
+    worldView.stop()
+    for (var i = 0; i < fuseHandles.length; i++) {
+      await fuseMod.unmount(fuseHandles[i])
+    }
     await swarm.destroy()
     await store.close()
     emit('stopped')

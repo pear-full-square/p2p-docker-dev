@@ -23,6 +23,7 @@ services:
     environment:
       - STORE_PATH=/data/corestore
       - FUSE_MOUNT=/mnt/host/drive
+      - FUSE_WORLD_MOUNT=/mnt/host/world
     ports:
       - "8080:8080"
     volumes:
@@ -39,6 +40,7 @@ services:
     environment:
       - STORE_PATH=/tmp/peer-store
       - FUSE_MOUNT=/mnt/host/drive
+      - FUSE_WORLD_MOUNT=/mnt/host/world
       - DRIVE_KEY=${DRIVE_KEY}
     ports:
       - "8081:8080"

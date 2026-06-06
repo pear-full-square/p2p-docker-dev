@@ -10,6 +10,10 @@
 //   GET /api/status           — drive + swarm status
 //   GET /api/nodes            — registered nodes (seed only)
 //   POST /api/register        — peer self-registration (seed only)
+//   GET /api/world/status     — world view status.json
+//   GET /api/world/peers      — world view peers.json
+//   GET /api/world/runs       — world view run history
+//   GET /api/world/ls?path=/  — list world view drive
 var http = typeof Bare !== 'undefined' ? require('bare-http1') : require('http')
 var b4a = require('b4a')
 
@@ -21,6 +25,7 @@ function startServer (drive, swarm, opts) {
   var nodeName = opts.node || 'unknown'
   var externalUrl = opts.url || null
   var isSeed = opts.seed || false
+  var worldView = opts.worldView || null
 
   function emit (event, extra) {
     console.log(JSON.stringify({ node: nodeName, event: event, time: Date.now(), ...(extra || {}) }))
@@ -32,7 +37,7 @@ function startServer (drive, swarm, opts) {
   }
 
   var server = http.createServer(function (req, res) {
-    handleRequest(drive, swarm, nodeName, isSeed, req, res).catch(function (err) {
+    handleRequest(drive, swarm, nodeName, isSeed, worldView, req, res).catch(function (err) {
       try {
         res.statusCode = 500
         res.setHeader('Content-Type', 'application/json')
@@ -50,7 +55,7 @@ function startServer (drive, swarm, opts) {
   return server
 }
 
-async function handleRequest (drive, swarm, nodeName, isSeed, req, res) {
+async function handleRequest (drive, swarm, nodeName, isSeed, worldView, req, res) {
   var url = req.url || '/'
   var qIdx = url.indexOf('?')
   var pathname = qIdx === -1 ? url : url.slice(0, qIdx)
@@ -107,6 +112,7 @@ async function handleRequest (drive, swarm, nodeName, isSeed, req, res) {
     var srcBuf = await drive.get(appEntry.path)
     if (!srcBuf) { respondJSON(res, { error: 'app source not found: ' + appEntry.path }, 404); return }
     var src = b4a.toString(srcBuf)
+    if (src.startsWith('#!')) src = src.slice(src.indexOf('\n') + 1)
     try {
       var mod = { exports: {} }
       var fn = new Function('module', 'exports', 'require', src)
@@ -120,8 +126,10 @@ async function handleRequest (drive, swarm, nodeName, isSeed, req, res) {
         }
       }
       var result = await mod.exports.run(ctx)
+      if (worldView) worldView.logRun(appName, result).catch(function () {})
       respondJSON(res, { app: appName, result: result })
     } catch (err) {
+      if (worldView) worldView.logRun(appName, null, err).catch(function () {})
       respondJSON(res, { app: appName, error: String(err.message || err) }, 500)
     }
   } else if (pathname === '/api/download') {
@@ -144,6 +152,34 @@ async function handleRequest (drive, swarm, nodeName, isSeed, req, res) {
     if (existing !== -1) nodes.splice(existing, 1)
     nodes.push({ name: data.name, url: data.url, role: 'peer', registered: Date.now() })
     respondJSON(res, { ok: true, nodes: nodes.length })
+  } else if (pathname === '/api/world/status' && worldView) {
+    var wsBuf = await worldView.drive.get('/status.json')
+    if (!wsBuf) { respondJSON(res, { error: 'no status yet' }, 404); return }
+    respond(res, 200, 'application/json', wsBuf)
+  } else if (pathname === '/api/world/peers' && worldView) {
+    var wpBuf = await worldView.drive.get('/peers.json')
+    if (!wpBuf) { respondJSON(res, { error: 'no peers yet' }, 404); return }
+    respond(res, 200, 'application/json', wpBuf)
+  } else if (pathname === '/api/world/runs' && worldView) {
+    var runs = []
+    try {
+      for await (var runEntry of worldView.drive.list('/runs/')) {
+        var runBuf = await worldView.drive.get(runEntry.key)
+        if (runBuf) runs.push(JSON.parse(b4a.toString(runBuf)))
+      }
+    } catch (e) {}
+    runs.sort(function (a, b) { return a.time > b.time ? -1 : 1 })
+    respondJSON(res, { runs: runs })
+  } else if (pathname === '/api/world/ls' && worldView) {
+    var wPath = getParam('path') || '/'
+    var wEntries = await listDir(worldView.drive, wPath)
+    respondJSON(res, { path: wPath, entries: wEntries })
+  } else if (pathname === '/api/world/file' && worldView) {
+    var wfPath = getParam('path')
+    if (!wfPath) { respondJSON(res, { error: 'path required' }, 400); return }
+    var wfBuf = await worldView.drive.get(wfPath)
+    if (!wfBuf) { respondJSON(res, { error: 'not found' }, 404); return }
+    respond(res, 200, guessContentType(wfPath), wfBuf)
   } else {
     respondJSON(res, { error: 'not found' }, 404)
   }
@@ -322,6 +358,18 @@ function nodeHTML () {
     '.btn-run:hover { background: #5fb85f; color: #0a0a0a; }',
     '.app-output { background: #0a0a0a; border: 1px solid #222; border-radius: 4px; padding: 12px; margin-top: 10px; font-size: 0.9em; white-space: pre-wrap; word-break: break-word; max-height: 300px; overflow: auto; }',
     '.app-output .out-label { color: #888; font-size: 0.8em; margin-bottom: 4px; }',
+    '',
+    '/* --- world view --- */',
+    '.world-section { margin-bottom: 20px; }',
+    '.world-section h3 { color: #7ec8e3; margin-bottom: 10px; font-size: 1em; }',
+    '.world-card { background: #111; border: 1px solid #222; border-radius: 4px; padding: 12px; margin-bottom: 8px; font-size: 0.9em; }',
+    '.world-card .wc-time { color: #666; font-size: 0.8em; }',
+    '.world-card .wc-app { color: #7ec8e3; font-weight: bold; }',
+    '.world-card .wc-result { color: #5fb85f; white-space: pre-wrap; margin-top: 4px; }',
+    '.world-card .wc-error { color: #e85050; margin-top: 4px; }',
+    '.world-kv { display: flex; gap: 12px; flex-wrap: wrap; }',
+    '.world-kv dt { color: #888; }',
+    '.world-kv dd { color: #d4d4d4; margin-right: 16px; }',
     '</style></head><body>',
     '',
     '<div class="node-header">',
@@ -335,6 +383,7 @@ function nodeHTML () {
     '<div class="tabs" id="tabs">',
     "  <a href=\"#browse\" class=\"active\" onclick=\"go('browse');return false\">Browse</a>",
     "  <a href=\"#apps\" onclick=\"go('apps');return false\">Apps</a>",
+    "  <a href=\"#world\" onclick=\"go('world');return false\">World View</a>",
     "  <a href=\"#status\" onclick=\"go('status');return false\">Status</a>",
     '</div>',
     '',
@@ -358,6 +407,7 @@ function nodeJS () {
     '  for(var i=0;i<tabs.length;i++) tabs[i].className=tabs[i].getAttribute("href")==="#"+view?"active":"";',
     '  if(view==="browse") renderBrowse(arg||state.browsePath);',
     '  else if(view==="apps") renderApps();',
+    '  else if(view==="world") renderWorld();',
     '  else if(view==="status") renderStatus();',
     '}',
     '',
@@ -493,6 +543,77 @@ function nodeJS () {
     '  });',
     '}',
     '',
+    '// --- world view ---',
+    'function renderWorld(){',
+    '  var v=$("view");',
+    '  v.innerHTML=\'<h2 style="color:#7ec8e3;margin-bottom:16px">World View</h2>\'+',
+    '    \'<div class="world-section"><h3>Node Status</h3><div id="wv-status">loading...</div></div>\'+',
+    '    \'<div class="world-section"><h3>Peers</h3><div id="wv-peers">loading...</div></div>\'+',
+    '    \'<div class="world-section"><h3>Run History</h3><div id="wv-runs">loading...</div></div>\'+',
+    '    \'<div class="world-section"><h3>Drive Contents</h3><div id="wv-files">loading...</div></div>\';',
+    '  loadWorldStatus();',
+    '  loadWorldPeers();',
+    '  loadWorldRuns();',
+    '  loadWorldFiles();',
+    '}',
+    '',
+    'function loadWorldStatus(){',
+    '  api("/api/world/status").then(function(s){',
+    '    var el=$("wv-status");if(!el)return;',
+    '    var h=\'<div class="world-card"><dl class="world-kv">\';',
+    '    h+=\'<dt>node</dt><dd>\'+esc(s.node)+\'</dd>\';',
+    '    h+=\'<dt>role</dt><dd>\'+esc(s.role)+\'</dd>\';',
+    '    h+=\'<dt>uptime</dt><dd>\'+s.uptime+\'s</dd>\';',
+    '    h+=\'<dt>peers</dt><dd>\'+s.peerCount+\'</dd>\';',
+    '    h+=\'<dt>updated</dt><dd>\'+esc(s.updated)+\'</dd>\';',
+    '    h+=\'</dl></div>\';',
+    '    el.innerHTML=h;',
+    '  }).catch(function(){var el=$("wv-status");if(el)el.innerHTML=\'<p style="color:#666">not available yet</p>\';});',
+    '}',
+    '',
+    'function loadWorldPeers(){',
+    '  api("/api/world/peers").then(function(d){',
+    '    var el=$("wv-peers");if(!el)return;',
+    '    if(!d.peers||!d.peers.length){el.innerHTML=\'<p style="color:#666">no peers connected</p>\';return;}',
+    '    var h=\'<ul class="peer-list">\';',
+    '    for(var i=0;i<d.peers.length;i++) h+=\'<li>\'+d.peers[i]+\'\\u2026</li>\';',
+    '    h+="</ul>";',
+    '    el.innerHTML=h;',
+    '  }).catch(function(){var el=$("wv-peers");if(el)el.innerHTML=\'<p style="color:#666">not available yet</p>\';});',
+    '}',
+    '',
+    'function loadWorldRuns(){',
+    '  api("/api/world/runs").then(function(d){',
+    '    var el=$("wv-runs");if(!el)return;',
+    '    if(!d.runs||!d.runs.length){el.innerHTML=\'<p style="color:#666">no runs yet</p>\';return;}',
+    '    var h="";',
+    '    for(var i=0;i<d.runs.length;i++){',
+    '      var r=d.runs[i];',
+    '      h+=\'<div class="world-card">\';',
+    '      h+=\'<span class="wc-app">\'+esc(r.app)+\'</span> \';',
+    '      h+=\'<span class="wc-time">\'+esc(r.time)+\'</span>\';',
+    '      if(r.success) h+=\'<div class="wc-result">\'+esc(JSON.stringify(r.result,null,2))+\'</div>\';',
+    '      else h+=\'<div class="wc-error">\'+esc(r.error)+\'</div>\';',
+    '      h+=\'</div>\';',
+    '    }',
+    '    el.innerHTML=h;',
+    '  }).catch(function(){var el=$("wv-runs");if(el)el.innerHTML=\'<p style="color:#666">not available yet</p>\';});',
+    '}',
+    '',
+    'function loadWorldFiles(){',
+    '  api("/api/world/ls?path=/").then(function(d){',
+    '    var el=$("wv-files");if(!el)return;',
+    '    if(!d.entries||!d.entries.length){el.innerHTML=\'<p style="color:#666">empty</p>\';return;}',
+    '    var h=\'<ul class="listing">\';',
+    '    for(var i=0;i<d.entries.length;i++){',
+    '      var e=d.entries[i],icon=e.type==="dir"?"&#128193;":"&#128196;";',
+    '      h+=\'<li><span class="icon">\'+icon+\'</span><span>\'+esc(e.name)+(e.type==="dir"?"/":"")+\'</span></li>\';',
+    '    }',
+    '    h+="</ul>";',
+    '    el.innerHTML=h;',
+    '  }).catch(function(){var el=$("wv-files");if(el)el.innerHTML=\'<p style="color:#666">not available yet</p>\';});',
+    '}',
+    '',
     '// --- utils ---',
     'function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}',
     'function fmtSize(b){if(b<1024)return b+" B";if(b<1048576)return(b/1024).toFixed(1)+" KB";return(b/1048576).toFixed(1)+" MB";}',
@@ -500,7 +621,7 @@ function nodeJS () {
     '// --- init ---',
     'var h=location.hash.slice(1)||"browse";',
     'go(h);',
-    'setInterval(function(){if(state.view==="browse")loadStatusBar();},5000);'
+    'setInterval(function(){if(state.view==="browse")loadStatusBar();if(state.view==="world")renderWorld();},5000);'
   ].join('\n')
 }
 
