@@ -1,47 +1,49 @@
 // Peer node — joins the swarm, replicates the drive, serves a browser UI.
 //
-// Phase 1: join + replicate + verify contents.
-// Phase 2: HTTP server with browser UI for drive browsing.
+// Runs under bare or node.js. Under node: also mounts FUSE if FUSE_MOUNT is set.
 //
 //   bare peer.js <bootstrapAddr> <driveKeyHex> [--http <port>] [--url <externalUrl>] [--seed-url <seedUrl>] [--name <peerName>]
+//   node peer.js <bootstrapAddr> <driveKeyHex> [--http <port>] [--url <externalUrl>] [--seed-url <seedUrl>] [--name <peerName>]
 const DHT = require('hyperdht')
 const Hyperswarm = require('hyperswarm')
 const Corestore = require('corestore')
 const Hyperdrive = require('hyperdrive')
-const Signal = require('bare-signals')
 const b4a = require('b4a')
 const { startServer } = require('../ui/http')
+const rt = require('../ui/runtime')
 
-const bootstrapArg = Bare.argv[2] || '172.28.0.10:49737'
-const driveKeyHex = Bare.argv[3]
+const bootstrapArg = rt.argv[2] || '172.28.0.10:49737'
+const driveKeyHex = rt.argv[3]
 
 if (!driveKeyHex) {
-  console.error('usage: bare peer.js <bootstrap host:port> <driveKeyHex> [--http <port>]')
-  Bare.exit(1)
+  console.error('usage: peer.js <bootstrap host:port> <driveKeyHex> [--http <port>]')
+  rt.exit(1)
 }
 
-const httpIdx = Bare.argv.indexOf('--http')
-const httpPort = httpIdx !== -1 ? Number(Bare.argv[httpIdx + 1]) : 0
-const urlIdx = Bare.argv.indexOf('--url')
-const externalUrl = urlIdx !== -1 ? Bare.argv[urlIdx + 1] : null
-const seedUrlIdx = Bare.argv.indexOf('--seed-url')
-const seedUrl = seedUrlIdx !== -1 ? Bare.argv[seedUrlIdx + 1] : null
-const nameIdx = Bare.argv.indexOf('--name')
-const peerName = nameIdx !== -1 ? Bare.argv[nameIdx + 1] : 'peer'
+const httpIdx = rt.argv.indexOf('--http')
+const httpPort = httpIdx !== -1 ? Number(rt.argv[httpIdx + 1]) : 0
+const urlIdx = rt.argv.indexOf('--url')
+const externalUrl = urlIdx !== -1 ? rt.argv[urlIdx + 1] : null
+const seedUrlIdx = rt.argv.indexOf('--seed-url')
+const seedUrl = seedUrlIdx !== -1 ? rt.argv[seedUrlIdx + 1] : null
+const nameIdx = rt.argv.indexOf('--name')
+const peerName = nameIdx !== -1 ? rt.argv[nameIdx + 1] : 'peer'
+
+const STORE_PATH = process.env.STORE_PATH || '/tmp/peer-store'
 
 const bootstrap = bootstrapArg.split(',').map((s) => {
   const [host, port] = s.split(':')
   return { host, port: Number(port) }
 })
 
-function emit (event, extra = {}) {
-  console.log(JSON.stringify({ node: peerName, event, time: Date.now(), ...extra }))
+function emit (event, extra) {
+  console.log(JSON.stringify({ node: peerName, event, time: Date.now(), ...(extra || {}) }))
 }
 
 async function main () {
   const driveKey = b4a.from(driveKeyHex, 'hex')
 
-  const store = new Corestore('/tmp/peer-store')
+  const store = new Corestore(STORE_PATH)
   const drive = new Hyperdrive(store, driveKey)
   await drive.ready()
   emit('drive-created', { key: driveKeyHex })
@@ -67,14 +69,12 @@ async function main () {
   done()
   emit('drive-synced', { version: drive.version })
 
-  // List the drive contents to verify replication
   const entries = []
   for await (const entry of drive.list('/')) {
     entries.push(entry.key)
   }
   emit('drive-contents', { files: entries })
 
-  // Read and print each file
   for (const path of entries) {
     const buf = await drive.get(path)
     if (buf) {
@@ -86,37 +86,49 @@ async function main () {
     startServer(drive, swarm, { port: httpPort, node: peerName, url: externalUrl })
   }
 
+  // FUSE mount (node.js only)
+  var fuseHandle = null
+  var fuseMod = rt.tryFuse()
+  if (fuseMod) {
+    try {
+      var mountPoint = process.env.FUSE_MOUNT
+      fuseHandle = await fuseMod.mountDrive(drive, mountPoint)
+      emit('fuse-mounted', { mountPoint })
+    } catch (e) {
+      emit('fuse-failed', { error: String(e.message || e) })
+    }
+  }
+
   if (seedUrl && externalUrl) {
     registerWithSeed(seedUrl, peerName, externalUrl)
   }
 
   emit('ready')
 
-  const sigterm = new Signal('SIGTERM')
-  sigterm.on('signal', async () => {
+  rt.onShutdown(async () => {
     emit('stopping')
+    if (fuseHandle) await fuseMod.unmount(fuseHandle)
     await swarm.destroy()
     await store.close()
     emit('stopped')
-    Bare.exit(0)
+    rt.exit(0)
   })
-  sigterm.start()
 }
 
 function registerWithSeed (seedUrl, name, url) {
-  const seedHttp = require('bare-http1')
-  const parsed = seedUrl.replace('http://', '').split(':')
-  const host = parsed[0]
-  const port = Number(parsed[1]) || 8080
-  const body = JSON.stringify({ name: name, url: url })
+  var http = rt.isBare ? require('bare-http1') : require('http')
+  var parsed = seedUrl.replace('http://', '').split(':')
+  var host = parsed[0]
+  var port = Number(parsed[1]) || 8080
+  var body = JSON.stringify({ name: name, url: url })
 
-  const req = seedHttp.request({
+  var req = http.request({
     host: host,
     port: port,
     path: '/api/register',
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
-  }, (res) => {
+  }, () => {
     emit('registered', { seedUrl: seedUrl })
   })
   req.on('error', (err) => {
@@ -127,5 +139,5 @@ function registerWithSeed (seedUrl, name, url) {
 
 main().catch((e) => {
   emit('fatal', { err: String(e && e.message || e) })
-  Bare.exit(1)
+  rt.exit(1)
 })

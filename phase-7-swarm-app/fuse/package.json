@@ -1,0 +1,10 @@
+{
+  "name": "swarm-fuse",
+  "private": true,
+  "dependencies": {
+    "fuse-native": "^2.2.6",
+    "corestore": "7.10.0",
+    "hyperdrive": "13.3.2",
+    "b4a": "1.8.1"
+  }
+}

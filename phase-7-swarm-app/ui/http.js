@@ -10,7 +10,7 @@
 //   GET /api/status           — drive + swarm status
 //   GET /api/nodes            — registered nodes (seed only)
 //   POST /api/register        — peer self-registration (seed only)
-var http = require('bare-http1')
+var http = typeof Bare !== 'undefined' ? require('bare-http1') : require('http')
 var b4a = require('b4a')
 
 var nodes = []
@@ -91,6 +91,50 @@ async function handleRequest (drive, swarm, nodeName, isSeed, req, res) {
       writable: drive.writable,
       peers: peers
     })
+  } else if (pathname === '/api/apps') {
+    var regBuf = await drive.get('/registry.json')
+    if (!regBuf) { respondJSON(res, { apps: {} }); return }
+    var reg = JSON.parse(b4a.toString(regBuf))
+    respondJSON(res, { apps: reg.apps || {} })
+  } else if (pathname === '/api/run') {
+    var appName = getParam('app')
+    if (!appName) { respondJSON(res, { error: 'app name required' }, 400); return }
+    var regBuf2 = await drive.get('/registry.json')
+    if (!regBuf2) { respondJSON(res, { error: 'no registry' }, 404); return }
+    var reg2 = JSON.parse(b4a.toString(regBuf2))
+    var appEntry = reg2.apps && reg2.apps[appName]
+    if (!appEntry) { respondJSON(res, { error: 'app not found: ' + appName }, 404); return }
+    var srcBuf = await drive.get(appEntry.path)
+    if (!srcBuf) { respondJSON(res, { error: 'app source not found: ' + appEntry.path }, 404); return }
+    var src = b4a.toString(srcBuf)
+    try {
+      var mod = { exports: {} }
+      var fn = new Function('module', 'exports', 'require', src)
+      fn(mod, mod.exports, require)
+      var ctx = {
+        drive: drive,
+        swarm: swarm,
+        nodeName: nodeName,
+        emit: function (evt, data) {
+          console.log(JSON.stringify({ node: nodeName, event: 'app:' + evt, time: Date.now(), ...(data || {}) }))
+        }
+      }
+      var result = await mod.exports.run(ctx)
+      respondJSON(res, { app: appName, result: result })
+    } catch (err) {
+      respondJSON(res, { app: appName, error: String(err.message || err) }, 500)
+    }
+  } else if (pathname === '/api/download') {
+    var dlPath = getParam('path')
+    if (!dlPath) { respondJSON(res, { error: 'path required' }, 400); return }
+    var dlBuf = await drive.get(dlPath)
+    if (!dlBuf) { respondJSON(res, { error: 'not found' }, 404); return }
+    var fileName = dlPath.split('/').pop()
+    res.statusCode = 200
+    res.setHeader('Content-Type', 'application/octet-stream')
+    res.setHeader('Content-Disposition', 'attachment; filename="' + fileName + '"')
+    res.setHeader('Content-Length', dlBuf.length)
+    res.end(dlBuf)
   } else if (pathname === '/api/nodes' && isSeed) {
     respondJSON(res, { nodes: nodes })
   } else if (pathname === '/api/register' && isSeed && req.method === 'POST') {
@@ -263,6 +307,21 @@ function nodeHTML () {
     '.status-detail .key { color: #7ec8e3; word-break: break-all; }',
     '.peer-list { list-style: none; margin-top: 4px; }',
     '.peer-list li { color: #5fb85f; padding: 2px 0; }',
+    '',
+    '/* --- apps view --- */',
+    '.app-list { list-style: none; }',
+    '.app-card { background: #111; border: 1px solid #222; border-radius: 4px; padding: 14px; margin-bottom: 10px; }',
+    '.app-card:hover { border-color: #333; }',
+    '.app-card .app-name { color: #7ec8e3; font-weight: bold; font-size: 1.05em; }',
+    '.app-card .app-desc { color: #888; font-size: 0.9em; margin-top: 4px; }',
+    '.app-card .app-path { color: #555; font-size: 0.8em; margin-top: 2px; }',
+    '.app-card .app-actions { margin-top: 10px; display: flex; gap: 8px; }',
+    '.btn { font-family: monospace; font-size: 0.9em; padding: 5px 14px; border: 1px solid #333; border-radius: 3px; cursor: pointer; background: #1a1a1a; color: #d4d4d4; }',
+    '.btn:hover { border-color: #7ec8e3; color: #7ec8e3; }',
+    '.btn-run { border-color: #5fb85f; color: #5fb85f; }',
+    '.btn-run:hover { background: #5fb85f; color: #0a0a0a; }',
+    '.app-output { background: #0a0a0a; border: 1px solid #222; border-radius: 4px; padding: 12px; margin-top: 10px; font-size: 0.9em; white-space: pre-wrap; word-break: break-word; max-height: 300px; overflow: auto; }',
+    '.app-output .out-label { color: #888; font-size: 0.8em; margin-bottom: 4px; }',
     '</style></head><body>',
     '',
     '<div class="node-header">',
@@ -275,6 +334,7 @@ function nodeHTML () {
     '',
     '<div class="tabs" id="tabs">',
     "  <a href=\"#browse\" class=\"active\" onclick=\"go('browse');return false\">Browse</a>",
+    "  <a href=\"#apps\" onclick=\"go('apps');return false\">Apps</a>",
     "  <a href=\"#status\" onclick=\"go('status');return false\">Status</a>",
     '</div>',
     '',
@@ -297,6 +357,7 @@ function nodeJS () {
     '  var tabs=$("tabs").getElementsByTagName("a");',
     '  for(var i=0;i<tabs.length;i++) tabs[i].className=tabs[i].getAttribute("href")==="#"+view?"active":"";',
     '  if(view==="browse") renderBrowse(arg||state.browsePath);',
+    '  else if(view==="apps") renderApps();',
     '  else if(view==="status") renderStatus();',
     '}',
     '',
@@ -390,6 +451,46 @@ function nodeJS () {
     '    h+="</dd></dl>";',
     '    $("sd").innerHTML=h;',
     '  }).catch(function(e){$("sd").innerHTML=\'<p class="error">\'+e.message+\'</p>\';});',
+    '}',
+    '',
+    '// --- apps view ---',
+    'function renderApps(){',
+    '  var v=$("view");',
+    '  v.innerHTML=\'<h2 style="color:#7ec8e3;margin-bottom:16px">Apps on the drive</h2><div id="app-list">loading...</div>\';',
+    '  api("/api/apps").then(function(d){',
+    '    var el=$("app-list");if(!el)return;',
+    '    var keys=Object.keys(d.apps||{});',
+    '    if(!keys.length){el.innerHTML=\'<p style="color:#666">no apps registered</p>\';return;}',
+    '    var h="";',
+    '    for(var i=0;i<keys.length;i++){',
+    '      var k=keys[i],a=d.apps[k];',
+    '      h+=\'<div class="app-card" id="app-\'+k+\'">\';',
+    '      h+=\'<div class="app-name">\'+esc(k)+\'</div>\';',
+    '      h+=\'<div class="app-desc">\'+esc(a.description)+\'</div>\';',
+    '      h+=\'<div class="app-path">\'+esc(a.path)+\'</div>\';',
+    '      h+=\'<div class="app-actions">\';',
+    '      h+=\'<button class="btn btn-run" onclick="runApp(\\x27\'+k+\'\\x27)">Run</button>\';',
+    '      h+=\'<button class="btn" onclick="viewFile(\\x27\'+a.path+\'\\x27);go(\\x27browse\\x27,\\x27\'+a.path+\'\\x27)">Source</button>\';',
+    '      h+=\'<a class="btn" href="/api/download?path=\'+encodeURIComponent(a.path)+\'" style="text-decoration:none">Download</a>\';',
+    '      h+=\'</div>\';',
+    '      h+=\'<div id="out-\'+k+\'" style="display:none"></div>\';',
+    '      h+=\'</div>\';',
+    '    }',
+    '    el.innerHTML=h;',
+    '  }).catch(function(e){var el=$("app-list");if(el)el.innerHTML=\'<p class="error">\'+e.message+\'</p>\';});',
+    '}',
+    '',
+    'function runApp(name){',
+    '  var out=$("out-"+name);',
+    '  if(!out)return;',
+    '  out.style.display="block";',
+    '  out.innerHTML=\'<div class="app-output"><div class="out-label">running...</div></div>\';',
+    '  api("/api/run?app="+encodeURIComponent(name)).then(function(d){',
+    '    var content=d.error?\'<span class="error">\'+esc(d.error)+\'</span>\':esc(JSON.stringify(d.result,null,2));',
+    '    out.innerHTML=\'<div class="app-output"><div class="out-label">output:</div>\'+content+\'</div>\';',
+    '  }).catch(function(e){',
+    '    out.innerHTML=\'<div class="app-output"><span class="error">\'+esc(e.message)+\'</span></div>\';',
+    '  });',
     '}',
     '',
     '// --- utils ---',
