@@ -1,9 +1,12 @@
-// FUSE mount for a node's Hyperdrive. Read-only projection of the drive
+// FUSE mount for a node's Hyperdrive. Read-write projection of the drive
 // onto the local filesystem. Shares the drive object with the node process
 // (same corestore, no lock conflicts).
 //
 // Local overlays: files from the container's filesystem can be overlaid onto
 // the drive (e.g. /bin/bare from the container image, not from the Hyperdrive).
+//
+// Writes: buffered per file descriptor. Flushed to drive.put() on release.
+// Hyperdrive directories are implicit — no mkdir needed.
 //
 //   mountDrive(drive, mountPoint, opts) — returns a promise that resolves when mounted
 //   opts.overlays: { '/bin/bare': '/path/to/local/bare' }
@@ -15,6 +18,11 @@ var CACHE_TTL = 5000
 
 function createCache () {
   return { entries: null, time: 0 }
+}
+
+function invalidateCache (cache) {
+  cache.entries = null
+  cache.time = 0
 }
 
 async function refreshCache (cache, drive) {
@@ -40,8 +48,9 @@ function buildOps (drive, overlays) {
   var cache = createCache()
   var overlayPaths = Object.keys(overlays || {})
   var overlayDirs = new Set()
+  var nextFd = 100
+  var openFiles = new Map()
 
-  // Pre-compute overlay parent directories
   for (var i = 0; i < overlayPaths.length; i++) {
     var parts = overlayPaths[i].split('/')
     var acc = ''
@@ -81,7 +90,6 @@ function buildOps (drive, overlays) {
           names.push(seg)
         }
 
-        // Add overlay entries
         var oNames = overlayNamesIn(p)
         for (var oi = 0; oi < oNames.length; oi++) {
           if (!seen.has(oNames[oi])) {
@@ -100,7 +108,6 @@ function buildOps (drive, overlays) {
       try {
         if (p === '/') { cb(0, stat(16877, 4096)); return }
 
-        // Check overlays first
         if (overlays && overlays[p]) {
           try {
             var oStat = fs.statSync(overlays[p])
@@ -138,12 +145,20 @@ function buildOps (drive, overlays) {
     },
 
     open: function (p, flags, cb) {
-      cb(0, 42)
+      var fd = nextFd++
+      openFiles.set(fd, { path: p, buf: null, dirty: false })
+      cb(0, fd)
+    },
+
+    create: function (p, mode, cb) {
+      var fd = nextFd++
+      openFiles.set(fd, { path: p, buf: Buffer.alloc(0), dirty: true })
+      invalidateCache(cache)
+      cb(0, fd)
     },
 
     read: async function (p, fd, buf, len, pos, cb) {
       try {
-        // Check overlays first
         if (overlays && overlays[p]) {
           var oFd = fs.openSync(overlays[p], 'r')
           var bytesRead = fs.readSync(oFd, buf, 0, len, pos)
@@ -152,14 +167,106 @@ function buildOps (drive, overlays) {
           return
         }
 
-        var data = await drive.get(p)
+        var f = openFiles.get(fd)
+        var data = (f && f.buf) ? f.buf : await drive.get(p)
         if (!data) { cb(Fuse.ENOENT); return }
+        if (pos >= data.length) { cb(0); return }
         var slice = data.slice(pos, pos + len)
         slice.copy(buf)
         cb(slice.length)
       } catch (e) {
         cb(Fuse.EIO)
       }
+    },
+
+    write: function (p, fd, buf, len, pos, cb) {
+      try {
+        var f = openFiles.get(fd)
+        if (!f) { cb(Fuse.EIO); return }
+
+        var data = buf.slice(0, len)
+        if (!f.buf) f.buf = Buffer.alloc(0)
+
+        if (pos + len > f.buf.length) {
+          var newBuf = Buffer.alloc(pos + len)
+          f.buf.copy(newBuf)
+          f.buf = newBuf
+        }
+        data.copy(f.buf, pos)
+        f.dirty = true
+        cb(len)
+      } catch (e) {
+        cb(Fuse.EIO)
+      }
+    },
+
+    truncate: function (p, size, cb) {
+      cb(0)
+    },
+
+    ftruncate: function (p, fd, size, cb) {
+      var f = openFiles.get(fd)
+      if (f) {
+        if (!f.buf) f.buf = Buffer.alloc(size)
+        else if (size === 0) f.buf = Buffer.alloc(0)
+        else f.buf = f.buf.slice(0, size)
+        f.dirty = true
+      }
+      cb(0)
+    },
+
+    release: async function (p, fd, cb) {
+      try {
+        var f = openFiles.get(fd)
+        if (f && f.dirty && f.buf) {
+          await drive.put(f.path, f.buf)
+          invalidateCache(cache)
+        }
+        openFiles.delete(fd)
+        cb(0)
+      } catch (e) {
+        openFiles.delete(fd)
+        cb(Fuse.EIO)
+      }
+    },
+
+    unlink: async function (p, cb) {
+      try {
+        await drive.del(p)
+        invalidateCache(cache)
+        cb(0)
+      } catch (e) {
+        cb(Fuse.EIO)
+      }
+    },
+
+    access: function (p, mode, cb) {
+      cb(0)
+    },
+
+    utimens: function (p, atime, mtime, cb) {
+      cb(0)
+    },
+
+    chmod: function (p, mode, cb) {
+      cb(0)
+    },
+
+    chown: function (p, uid, gid, cb) {
+      cb(0)
+    },
+
+    mknod: function (p, mode, dev, cb) {
+      invalidateCache(cache)
+      cb(0)
+    },
+
+    mkdir: function (p, mode, cb) {
+      cb(0)
+    },
+
+    rmdir: function (p, cb) {
+      cb(0)
     }
   }
 }
