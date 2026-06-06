@@ -1,0 +1,20 @@
+{
+  "name": "p2p-docker-dev-swarm-app",
+  "private": true,
+  "comment": "Phase 7 — swarm app. Seed node (DHT + Hyperdrive) and peer node (join + browse). Same stack as phase 5 minus the AVRO RPC layer (no avsc/avsc-rpc for now).",
+  "dependencies": {
+    "hyperswarm": "^4.17.0",
+    "hyperdht": "^6.32.0",
+    "sodium-native": "^5.1.0",
+    "bare-signals": "^4.2.0",
+    "corestore": "7.10.0",
+    "hyperdrive": "13.3.2",
+    "bare-http1": "^4.5.7",
+    "b4a": "1.8.1",
+    "bare-fs": "^4.7.0",
+    "bare-buffer": "^3.6.0",
+    "bare-events": "^2.8.2",
+    "bare-stream": "^2.13.0",
+    "bare-path": "^3.0.0"
+  }
+}

@@ -1,0 +1,42 @@
+# Phase 7 — swarm app. Seed node (DHT bootstrapper + Hyperdrive host) and
+# peer node (join + replicate + browse).
+#
+# The seed node's corestore lives on a Docker volume — persistent across
+# container restarts. The peer's store is ephemeral (/tmp).
+
+x-node: &node
+  build: .
+  image: p2p-docker-dev:7.0
+  init: true
+  restart: "no"
+  networks: [swarm]
+
+services:
+  seed:
+    <<: *node
+    container_name: swarm-seed
+    command: ["seed/seed.js", "${CLUSTER_SEED}", "${BOOTSTRAP_PORT}", "${BOOTSTRAP_IP}", "--http", "8080", "--url", "http://${EXTERNAL_HOST}:8080"]
+    ports:
+      - "8080:8080"
+    volumes:
+      - seed-data:/data/corestore
+    networks:
+      swarm:
+        ipv4_address: ${BOOTSTRAP_IP}
+
+  peer:
+    <<: *node
+    container_name: swarm-peer
+    command: ["peer/peer.js", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "${DRIVE_KEY}", "--http", "8080", "--url", "http://${EXTERNAL_HOST}:8081", "--seed-url", "http://${BOOTSTRAP_IP}:8080", "--name", "peer"]
+    ports:
+      - "8081:8080"
+    depends_on: [seed]
+
+networks:
+  swarm:
+    ipam:
+      config:
+        - subnet: ${CLUSTER_SUBNET}
+
+volumes:
+  seed-data:
