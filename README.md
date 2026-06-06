@@ -13,9 +13,14 @@ journey; the latest is the current product.
 
 ## The product, right now
 
-The cluster is now **managed**: a manager distributes role-code *and an assignment
-manifest* over a signed Hyperdrive, and generic workers self-assign and run their
-roles.
+The **swarm app** composes the proven primitives into a user-facing entrypoint:
+- **[phase-7-swarm-app](phase-7-swarm-app/)** — two containers: a **seed node**
+  (DHT bootstrapper + Hyperdrive host on a persistent volume) and a **peer node**
+  (joins the swarm, replicates the drive). Both serve a **browser UI** — the seed
+  has a dashboard with a node switcher; each node runs an SPA with drive browser
+  and status views. The swarm as a browsable, extensible surface.
+
+Built on the managed-cluster foundation:
 - **[phase-5-managed-code](phase-5-managed-code/)** — managed code distribution: a
   manager seeds role-code + a manifest into a signed drive; workers (shipping no
   business logic) replicate by the trusted key, read the manifest to learn **what
@@ -45,6 +50,7 @@ cd phase-5-managed-code && ./capture.sh     # Ctrl-C to stop; writes a session l
 | **[phase-4-pubsub-mesh](phase-4-pubsub-mesh/)** | **Pub/sub (1:many).** Every member meshes (server+client); one emits, the others receive — no hub. The contrast to phase-3. |
 | **[phase-5-managed-code](phase-5-managed-code/)** | **Managed code distribution.** A manager seeds role-code **+ a signed registry** into a **Hyperdrive**; generic workers replicate by the **trusted key**, self-assign roles, pull and run them (in-memory / checkout). 5.2 puts the connection on **protomux** (named channels → multi-role-per-worker); 5.3 gives each worker a **keyed identity** + **connect-by-key** (target a specific worker). Trust = a signed key; the app owns all runtime code. First use of the storage stack. |
 | **[phase-6-reactive-dataflow](phase-6-reactive-dataflow/)** | **Reactive dataflow — the execution-model heart.** A repo reacts to a data-change event (a new append on a subscribed log), processes, and **emits to its own log** — waking the next. Probe proves the cascade under Bare: source → transform → sink, each **live-tailing** (push, not poll), cursors advancing. The last exploratory POC; the over-the-swarm version composes phase-5's replication in Round 3. |
+| **[phase-7-swarm-app](phase-7-swarm-app/)** | **Swarm app — the user-facing entrypoint.** Composes proven primitives into two containers: seed node (DHT + Hyperdrive + persistent storage + browser UI) and peer node (join + replicate + browser UI). Dashboard with node switcher on the seed; each node runs an SPA (drive browser, status). The swarm as a browsable surface — extensible for git integration and process execution. |
 
 Each phase folder holds a `README.md` (the journey for that step), the runnable
 code + `capture.sh`, a representative scrubbed `session.jsonl`, and any `probes/`
