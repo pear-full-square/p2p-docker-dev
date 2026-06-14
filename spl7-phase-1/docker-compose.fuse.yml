@@ -1,0 +1,25 @@
+# FUSE overlay — adds Hyperdrive FUSE mounts projected to the host.
+# Requires: sudo mount --make-rshared /
+# Usage: docker compose -f docker-compose.yml -f docker-compose.fuse.yml up
+
+services:
+  platform:
+    privileged: true
+    devices:
+      - /dev/fuse
+    environment:
+      - STORE_PATH=/data/corestore
+      - FUSE_MOUNT=/mnt/host/drive
+    volumes:
+      - platform-data:/data/corestore
+      - ${FUSE_HOST_DIR:-./mnt}/platform:/mnt/host:rshared
+
+  node:
+    privileged: true
+    devices:
+      - /dev/fuse
+    environment:
+      - STORE_PATH=/tmp/node-store
+      - FUSE_MOUNT=/mnt/host/drive
+    volumes:
+      - ${FUSE_HOST_DIR:-./mnt}/node:/mnt/host:rshared

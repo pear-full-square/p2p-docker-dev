@@ -1,0 +1,46 @@
+# spl7 phase 2 — mycelium on Hyperdrive.
+# Git repo on the Hyperdrive, XPath navigation via the mycelium module.
+
+x-node: &node
+  build: .
+  image: spl7-phase-2:latest
+  init: true
+  restart: "no"
+  networks: [swarm]
+
+services:
+  platform:
+    <<: *node
+    container_name: spl7p2-platform
+    command: ["platform/platform.js", "${CLUSTER_SEED}", "${BOOTSTRAP_PORT}", "${BOOTSTRAP_IP}"]
+    environment:
+      - STORE_PATH=/data/corestore
+      - EXTERNAL_URL=http://${EXTERNAL_HOST}:8090
+    ports:
+      - "8090:8080"
+    volumes:
+      - platform-data:/data/corestore
+    networks:
+      swarm:
+        ipv4_address: ${BOOTSTRAP_IP}
+
+  node:
+    <<: *node
+    container_name: spl7p2-node
+    command: ["join/join.js", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "${DRIVE_KEY}", "node"]
+    environment:
+      - STORE_PATH=/tmp/node-store
+      - EXTERNAL_URL=http://${EXTERNAL_HOST}:8091
+      - PLATFORM_URL=http://${BOOTSTRAP_IP}:8080
+    ports:
+      - "8091:8080"
+    depends_on: [platform]
+
+networks:
+  swarm:
+    ipam:
+      config:
+        - subnet: ${CLUSTER_SUBNET}
+
+volumes:
+  platform-data:

@@ -1,0 +1,50 @@
+# spl7 phase 1 — master data view on the swarm.
+# Platform node seeds the six-folder tree; joining node replicates it sparsely.
+#
+# Default: no FUSE. Add FUSE with:
+#   docker compose -f docker-compose.yml -f docker-compose.fuse.yml up
+# (requires: sudo mount --make-rshared /)
+
+x-node: &node
+  build: .
+  image: spl7-phase-1:latest
+  init: true
+  restart: "no"
+  networks: [swarm]
+
+services:
+  platform:
+    <<: *node
+    container_name: spl7-platform
+    command: ["platform/platform.js", "${CLUSTER_SEED}", "${BOOTSTRAP_PORT}", "${BOOTSTRAP_IP}"]
+    environment:
+      - STORE_PATH=/data/corestore
+      - EXTERNAL_URL=http://${EXTERNAL_HOST}:8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - platform-data:/data/corestore
+    networks:
+      swarm:
+        ipv4_address: ${BOOTSTRAP_IP}
+
+  node:
+    <<: *node
+    container_name: spl7-node
+    command: ["join/join.js", "${BOOTSTRAP_IP}:${BOOTSTRAP_PORT}", "${DRIVE_KEY}", "node"]
+    environment:
+      - STORE_PATH=/tmp/node-store
+      - EXTERNAL_URL=http://${EXTERNAL_HOST}:8081
+      - PLATFORM_URL=http://${BOOTSTRAP_IP}:8080
+    ports:
+      - "8081:8080"
+    depends_on: [platform]
+
+networks:
+  swarm:
+    ipam:
+      config:
+        - subnet: ${CLUSTER_SUBNET}
+
+volumes:
+  platform-data:
