@@ -1,0 +1,13 @@
+{
+  "name": "spl7-phase-2",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "b4a": "^1.6.7",
+    "corestore": "^7.0.0",
+    "hyperdht": "^6.0.0",
+    "hyperdrive": "^11.0.0",
+    "hyperswarm": "^4.0.0",
+    "isomorphic-git": "^1.29.0"
+  }
+}

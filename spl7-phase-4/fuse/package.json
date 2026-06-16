@@ -1,0 +1,8 @@
+{
+  "name": "spl7-phase-1-fuse",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "fuse-native": "^2.0.0"
+  }
+}
