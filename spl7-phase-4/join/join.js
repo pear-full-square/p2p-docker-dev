@@ -1,5 +1,6 @@
-// Joining node — replicates the platform's swarm setup drive (read-only),
-// navigates the tree with mycelium, and watches for updates.
+// Joining node — replicates the platform's swarm setup (read-only), creates
+// its own instance Hyperdrive (writable), forks the platform tree into it,
+// and registers with the platform including the instance drive key.
 //
 //   node join.js <bootstrap host:port> <driveKey> [name]
 var DHT = require('hyperdht')
@@ -26,8 +27,35 @@ var httpPort = Number(process.env.HTTP_PORT) || 8080
 var externalUrl = process.env.EXTERNAL_URL || null
 var platformUrl = process.env.PLATFORM_URL || null
 
+var AUTHOR = { name: 'spl', email: 'spl@splectrum' }
+
 function emit (event, extra) {
   console.log(JSON.stringify({ node: nodeName, event: event, time: Date.now(), ...(extra || {}) }))
+}
+
+// Copy a git tree from one repo to another (same as phase 3 fork)
+async function forkTree (sourceRepo, targetRepo) {
+  var sourceLog = await sourceRepo.log('main', 1)
+  var rootTreeOid = sourceLog[0].commit.tree
+
+  async function copyTree (oid) {
+    var entries = await sourceRepo.git.readTree(oid)
+    var targetEntries = []
+    for (var i = 0; i < entries.length; i++) {
+      var entry = entries[i]
+      if (entry.type === 'tree' || entry.mode === '040000') {
+        var subtreeOid = await copyTree(entry.oid)
+        targetEntries.push({ mode: '040000', path: entry.path, oid: subtreeOid, type: 'tree' })
+      } else {
+        var blob = await sourceRepo.git.readBlob(entry.oid)
+        var blobOid = await targetRepo.git.writeBlob(blob)
+        targetEntries.push({ mode: entry.mode, path: entry.path, oid: blobOid, type: 'blob' })
+      }
+    }
+    return targetRepo.git.writeTree(targetEntries)
+  }
+
+  return copyTree(rootTreeOid)
 }
 
 async function main () {
@@ -39,9 +67,10 @@ async function main () {
   var driveKey = b4a.from(driveKeyHex, 'hex')
   var store = new Corestore(STORE_PATH)
 
-  var drive = new Hyperdrive(store, driveKey)
-  await drive.ready()
-  emit('drive-created', { key: driveKeyHex })
+  // --- Platform drive (read-only replica) ---
+  var platformDrive = new Hyperdrive(store, driveKey)
+  await platformDrive.ready()
+  emit('platform-drive-created', { key: driveKeyHex })
 
   var swarm = new Hyperswarm({
     dht: new DHT({ bootstrap: bootstrap, firewalled: false })
@@ -55,62 +84,67 @@ async function main () {
     store.replicate(conn)
   })
 
-  var done = drive.findingPeers()
-  swarm.join(drive.discoveryKey, { server: false, client: true })
-  emit('joining', { discoveryKey: b4a.toString(drive.discoveryKey, 'hex').slice(0, 16) })
+  var done = platformDrive.findingPeers()
+  swarm.join(platformDrive.discoveryKey, { server: false, client: true })
+  emit('joining', { discoveryKey: b4a.toString(platformDrive.discoveryKey, 'hex').slice(0, 16) })
 
   await swarm.flush()
-  await drive.update()
+  await platformDrive.update()
   done()
-  emit('synced', { version: drive.version })
+  emit('platform-synced', { version: platformDrive.version })
 
-  var hfs = createHyperdriveFs(drive)
-  var repo = await open(git, hfs, '/')
-  emit('repo-ready')
+  var platformFs = createHyperdriveFs(platformDrive)
+  var platformRepo = await open(git, platformFs, '/')
+  emit('platform-repo-ready')
 
-  // Browse the swarm setup
-  var rootEntries = await repo.select('/')
-  emit('select-root', { entries: rootEntries.map(function (e) { return e.key }) })
+  // --- Instance drive (own, writable) ---
+  var instanceDrive = new Hyperdrive(store.namespace('instance'))
+  await instanceDrive.ready()
+  var instanceKey = b4a.toString(instanceDrive.key, 'hex')
+  emit('instance-drive-ready', { key: instanceKey, writable: instanceDrive.writable })
 
-  // Available packages
-  var pkgEntries = await repo.select('/packages')
-  emit('select-packages', { entries: pkgEntries.map(function (e) { return e.key }) })
+  var instanceFs = createHyperdriveFs(instanceDrive)
+  var instanceRepo = await open(git, instanceFs, '/', { init: true })
 
-  // Swarm config
-  var swarmConfig = await repo.get('/config/swarm')
-  emit('swarm-config', JSON.parse(swarmConfig.toString()))
+  var needsFork = false
+  try { await instanceRepo.log('main', 1) }
+  catch (e) { needsFork = true }
 
-  // Who's in the swarm
-  var swarmEntries = await repo.select('/swarm')
-  emit('select-swarm', { entries: swarmEntries.map(function (e) { return e.key }) })
+  if (needsFork) {
+    var forkedTreeOid = await forkTree(platformRepo, instanceRepo)
+    var forkCommit = await instanceRepo.commitTree(forkedTreeOid, 'fork from platform', AUTHOR)
+    emit('forked', { commitOid: forkCommit })
 
-  // Git log
-  var log = await repo.log('main')
-  emit('git-log', { commits: log.length, head: log[0].oid.slice(0, 12) })
+    var identity = {
+      node: nodeName,
+      role: 'node',
+      instanceKey: instanceKey,
+      platformKey: driveKeyHex,
+      created: new Date().toISOString()
+    }
+    var newTree = await instanceRepo.put('/config/identity', Buffer.from(JSON.stringify(identity, null, 2) + '\n'))
+    await instanceRepo.commitTree(newTree, 'set node identity', AUTHOR)
+    emit('identity-set')
+  }
+
+  var instanceEntries = await instanceRepo.select('/')
+  emit('instance-tree', { entries: instanceEntries.map(function (e) { return e.key }) })
 
   emit('ready')
 
-  startServer(drive, swarm, repo, { port: httpPort, node: nodeName })
+  // Serve the node's own instance drive in its HTTP UI
+  var drives = {}
+  drives[nodeName] = { drive: instanceDrive, repo: instanceRepo, writable: true }
+  drives['platform'] = { drive: platformDrive, repo: platformRepo, writable: false }
 
-  // Register with the platform — this triggers a git commit on the platform
+  startServer(null, swarm, null, {
+    port: httpPort, node: nodeName, drives: drives
+  })
+
+  // Register with platform — include instance drive key
   if (platformUrl && externalUrl) {
-    registerWithPlatform(platformUrl, nodeName, externalUrl)
+    registerWithPlatform(platformUrl, nodeName, externalUrl, instanceKey)
   }
-
-  // Watch for updates — the platform commits when nodes register
-  setInterval(async function () {
-    try {
-      var updated = await drive.update()
-      if (updated) {
-        var newLog = await repo.log('main', 1)
-        emit('drive-updated', {
-          version: drive.version,
-          head: newLog[0].oid.slice(0, 12),
-          message: newLog[0].commit.message.trim()
-        })
-      }
-    } catch (e) {}
-  }, 3000)
 
   var stopping = false
   async function shutdown () {

@@ -1,6 +1,7 @@
 // Platform node — the swarm setup owner.
-// Seeds a populated master data view, registers joining nodes under swarm/,
-// and commits each registration so the tree evolves through git.
+// Seeds the master data view, registers joining nodes under swarm/, and
+// opens read-only replicas of each node's instance drive so the dashboard
+// can browse any drive from one HTTP entry point.
 //
 //   node platform.js <seedHex> <bootstrapPort> <bootstrapHost>
 var DHT = require('hyperdht')
@@ -67,20 +68,13 @@ async function main () {
     emit('tree-exists')
   }
 
-  // Show the tree
   var rootEntries = await repo.select('/')
   emit('select-root', { entries: rootEntries.map(function (e) { return e.key }) })
-
-  var pkgEntries = await repo.select('/packages')
-  emit('select-packages', { entries: pkgEntries.map(function (e) { return e.key }) })
-
-  var swarmEntries = await repo.select('/swarm')
-  emit('select-swarm', { entries: swarmEntries.map(function (e) { return e.key }) })
 
   var log = await repo.log('main')
   emit('git-log', { commits: log.length, head: log[0].oid.slice(0, 12) })
 
-  // Join swarm
+  // --- Swarm ---
   var swarm = new Hyperswarm({
     dht: new DHT({
       bootstrap: [{ host: bootstrapHost, port: bootstrapPort }],
@@ -101,22 +95,52 @@ async function main () {
   await swarm.flush()
   emit('serving', { driveKey: driveKey })
 
-  // The onRegister callback: when a node registers, write it into the tree
+  // --- Drives map: name → { drive, repo, writable } ---
+  var drives = {}
+  drives['platform'] = { drive: drive, repo: repo, writable: true }
+
+  // Open a read-only replica of a node's instance drive
+  async function openNodeDrive (name, driveKeyHex) {
+    try {
+      var nodeKey = b4a.from(driveKeyHex, 'hex')
+      var nodeDrive = new Hyperdrive(store, nodeKey)
+      await nodeDrive.ready()
+
+      var done = nodeDrive.findingPeers()
+      swarm.join(nodeDrive.discoveryKey, { server: false, client: true })
+      await swarm.flush()
+      await nodeDrive.update()
+      done()
+
+      var nodeFs = createHyperdriveFs(nodeDrive)
+      var nodeRepo = await open(git, nodeFs, '/')
+      drives[name] = { drive: nodeDrive, repo: nodeRepo, writable: false }
+      emit('node-drive-opened', { name: name, key: driveKeyHex, version: nodeDrive.version })
+    } catch (e) {
+      emit('node-drive-error', { name: name, error: String(e.message || e) })
+    }
+  }
+
   function onRegister (name, data) {
     var info = {
       name: name,
       role: data.role || 'node',
       url: data.url,
+      driveKey: data.driveKey || null,
       registered: new Date().toISOString()
     }
     registerNode(repo, name, info, emit).catch(function (e) {
       emit('register-error', { name: name, error: String(e.message || e) })
     })
+
+    if (data.driveKey) {
+      openNodeDrive(name, data.driveKey)
+    }
   }
 
   startServer(drive, swarm, repo, {
     port: httpPort, node: 'platform', seed: true, url: externalUrl,
-    onRegister: onRegister
+    onRegister: onRegister, drives: drives
   })
 
   var stopping = false
